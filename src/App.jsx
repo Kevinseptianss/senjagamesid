@@ -1,9 +1,17 @@
 import { useState } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import { useZelenkaAccounts } from './hooks/useZelenkaAccounts'
 import DebugPage from './components/DebugPage'
 import SteamPage from './components/SteamPage'
+import SteamDebugPage from './components/SteamDebugPage'
 import SteamFilters from './components/SteamFilters'
+import SteamAccountsContainer from './components/SteamAccountsContainer'
+import AccountDetailPage from './components/AccountDetailPage'
+import ZelenkaAPI from './services/zelenkaAPI'
+
+// Create API instance
+const zelenkaAPI = new ZelenkaAPI()
 
 // Import local SVG icons
 import steamIcon from './assets/icons8-steam.svg'
@@ -17,17 +25,96 @@ import worldOfTanksBlitzIcon from './assets/icons8-world-of-tanks-blitz.svg'
 import warThunderIcon from './assets/war_thunder_vector__svg__by_erratic_fox_d700fdj.svg'
 import miHoYoIcon from './assets/68258c779c36b-miHoYo.svg'
 
-function App() {
-  const [showDebug, setShowDebug] = useState(false)
+function MainPage() {
   const [showSteamPage, setShowSteamPage] = useState(false)
+  const [showSteamDebug, setShowSteamDebug] = useState(false)
   const { 
     accounts: filteredAccounts, 
     loading, 
     error, 
     selectedCategory, 
     changeCategory,
-    refreshAccounts 
+    refreshAccounts,
+    updateSteamFilters 
   } = useZelenkaAccounts()
+
+  // Test API functionality
+  const handleTestAPI = async () => {
+    console.log('🧪 Starting comprehensive API tests...');
+    
+    // Test general connection
+    console.log('🔗 Testing connection...');
+    const connectionTest = await zelenkaAPI.testConnection();
+    console.log('Connection test result:', connectionTest);
+    
+    // Test LZT Market Steam endpoint
+    console.log('🎯 Testing LZT Market Steam endpoint...');
+    const lztSteamTest = await zelenkaAPI.testLZTMarketSteamEndpoint();
+    console.log('LZT Market Steam endpoint test result:', lztSteamTest);
+    
+    // Test general pagination first
+    console.log('📄 Testing general pagination...');
+    const generalPaginationTest = await zelenkaAPI.testGeneralPagination();
+    console.log('General pagination test result:', generalPaginationTest);
+    
+    // Test Steam endpoint specifically
+    console.log('🎮 Testing Steam endpoint...');
+    const steamTest = await zelenkaAPI.testSteamEndpoint();
+    console.log('Steam endpoint test result:', steamTest);
+    
+    // Test Steam pagination
+    console.log('📄 Testing Steam pagination...');
+    const paginationTest = await zelenkaAPI.testSteamPagination();
+    console.log('Steam pagination test result:', paginationTest);
+    
+    // Test PUBG filtering with node-lzt format
+    console.log('🎮 Testing PUBG filtering with node-lzt format...');
+    const pubgTest = await zelenkaAPI.testPUBGFiltering();
+    console.log('PUBG filtering test result:', pubgTest);
+    
+    // Test Steam category parameters
+    console.log('📋 Testing Steam category parameters...');
+    const steamParamsTest = await zelenkaAPI.testSteamCategoryParams();
+    console.log('Steam category params test result:', steamParamsTest);
+    
+    // Try getting Steam accounts (single page)
+    console.log('🧪 Testing getSteamAccounts (single page)...');
+    try {
+      const steamAccounts = await zelenkaAPI.getSteamAccounts();
+      console.log('Steam accounts result:', steamAccounts);
+    } catch (error) {
+      console.error('Steam accounts test failed:', error);
+    }
+    
+    // Try getting Steam accounts (multiple pages)
+    console.log('🧪 Testing getSteamAccountsMultiplePages...');
+    try {
+      const steamAccountsMulti = await zelenkaAPI.getSteamAccountsMultiplePages({}, 3);
+      console.log('Steam accounts multi-page result:', steamAccountsMulti);
+    } catch (error) {
+      console.error('Steam accounts multi-page test failed:', error);
+    }
+    
+    // Test game-specific filtering (PUBG)
+    console.log('🎮 Testing PUBG-specific filtering...');
+    try {
+      const pubgAccounts = await zelenkaAPI.getSteamAccountsByGame('578080', 'PUBG');
+      console.log('PUBG accounts result:', pubgAccounts);
+    } catch (error) {
+      console.error('PUBG accounts test failed:', error);
+    }
+    
+    // Test game-specific filtering (CS2)
+    console.log('🎯 Testing CS2-specific filtering...');
+    try {
+      const cs2Accounts = await zelenkaAPI.getSteamAccountsByGame('730', 'CS2');
+      console.log('CS2 accounts result:', cs2Accounts);
+    } catch (error) {
+      console.error('CS2 accounts test failed:', error);
+    }
+    
+    console.log('✅ All API tests completed! Check console for detailed results.');
+  }
 
   const categories = [
     { name: 'Steam', icon: steamIcon, color: '#1B2838', isLocal: true },
@@ -55,9 +142,9 @@ function App() {
     { name: 'Roblox', icon: 'simple-icons:roblox', color: '#E13838', isLocal: false }
   ]
 
-  // Show debug page if enabled
-  if (showDebug) {
-    return <DebugPage onBack={() => setShowDebug(false)} />
+  // Show Steam debug page if enabled
+  if (showSteamDebug) {
+    return <SteamDebugPage onBack={() => setShowSteamDebug(false)} />
   }
 
   // Show Steam page if enabled
@@ -76,22 +163,22 @@ function App() {
                 SenjaGames.id
               </h1>
             </div>
-            {/* <nav className="hidden md:flex space-x-8">
-              <a href="#" className="text-gray-300 hover:text-purple-400 transition-colors">Sell</a>
-            </nav> */}
             <div className="flex items-center space-x-4">
               <button 
-                onClick={() => setShowSteamPage(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center"
+                onClick={handleTestAPI}
+                className="bg-blue-700 hover:bg-blue-600 text-blue-100 hover:text-white px-3 py-2 rounded text-sm transition-colors flex items-center space-x-2"
+                title="Test API Connection & Steam Endpoint"
               >
-                <Icon icon="mdi:steam" className="mr-2" />
-                Steam Filters
+                <Icon icon="material-symbols:api" className="w-4 h-4" />
+                <span>Test API</span>
               </button>
               <button 
-                onClick={() => setShowDebug(true)}
-                className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors text-sm"
+                onClick={() => setShowSteamDebug(true)}
+                className="bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white px-3 py-2 rounded text-sm transition-colors flex items-center space-x-2"
+                title="Steam API Debug"
               >
-                Debug API
+                <Icon icon="material-symbols:bug-report" className="w-4 h-4" />
+                <span>Steam Debug</span>
               </button>
               <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
                 Login
@@ -177,9 +264,8 @@ function App() {
           <SteamFilters 
             onFilterChange={(filters) => {
               console.log('Steam filters applied:', filters);
-              // Here you would integrate with your Steam API fetching logic
-              // For now, just refresh the accounts
-              refreshAccounts();
+              // Apply the filters to the Steam API call
+              updateSteamFilters(filters);
             }} 
             loading={loading} 
           />
@@ -219,155 +305,175 @@ function App() {
           </div>
         )}
 
-        {/* Accounts Grid */}
+        {/* Accounts Display */}
         {!loading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAccounts.map((account) => (
-            <div key={account.id} className="bg-gray-900 rounded-lg shadow-lg border border-gray-700 hover:border-purple-500 transition-all duration-300 p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center space-x-2">
-                  <span className="text-3xl font-bold text-purple-400">
-                    {account.price}
-                  </span>
-                  {account.hasWarranty && (
-                    <span className="bg-green-600 text-white text-xs px-3 py-1 rounded-full">
-                      {account.warranty} warranty
-                    </span>
-                  )}
-                </div>
-                <span className="bg-purple-600 text-white text-sm px-3 py-1 rounded-lg font-medium">
-                  {account.type}
-                </span>
-              </div>
-
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Status:</span>
-                  <span className="text-gray-200 font-medium">{account.status}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Last seen:</span>
-                  <span className="text-gray-200 font-medium">{account.lastSeen}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Country:</span>
-                  <span className="text-gray-200 font-medium">{account.country}</span>
-                </div>
-              </div>
-
-              {account.type === 'Steam' && account.games && (
-                <div className="mb-4">
-                  <p className="text-sm text-gray-400 mb-2">Includes:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {account.games.slice(0, 3).map((game, index) => (
-                      <span key={index} className="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded border border-gray-600">
-                        {game}
+          selectedCategory === 'Steam' ? (
+            <SteamAccountsContainer 
+              accounts={filteredAccounts} 
+              loading={loading} 
+              error={error} 
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredAccounts.map((account) => (
+                <div key={account.id} className="bg-gray-900 rounded-lg shadow-lg border border-gray-700 hover:border-purple-500 transition-all duration-300 p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-3xl font-bold text-purple-400">
+                        {account.priceWithSellerFeeLabel || `$${account.price}`}
                       </span>
-                    ))}
+                      {account.hasWarranty && (
+                        <span className="bg-green-600 text-white text-xs px-3 py-1 rounded-full">
+                          {account.warranty} warranty
+                        </span>
+                      )}
+                      {account.guarantee?.durationPhrase && (
+                        <span className="bg-green-600 text-white text-xs px-3 py-1 rounded-full">
+                          {account.guarantee.durationPhrase} guarantee
+                        </span>
+                      )}
+                    </div>
+                    <span className="bg-purple-600 text-white text-sm px-3 py-1 rounded-lg font-medium">
+                      {account.type}
+                    </span>
                   </div>
-                </div>
-              )}
 
-              {/* Telegram/Discord Stats */}
-              {(account.chats !== undefined) && (
-                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                  <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
-                    <div className="font-bold text-purple-400 text-lg">{account.chats}</div>
-                    <div className="text-gray-400">Chats</div>
+                  <div className="space-y-3 mb-4">
+                    {(account.item_state || account.status) && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Status:</span>
+                        <span className="text-gray-200 font-medium">{account.item_state || account.status}</span>
+                      </div>
+                    )}
+                    {(account.account_last_activity || account.lastSeen) && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Last seen:</span>
+                        <span className="text-gray-200 font-medium">
+                          {account.account_last_activity 
+                            ? new Date(account.account_last_activity * 1000).toLocaleDateString()
+                            : account.lastSeen
+                          }
+                        </span>
+                      </div>
+                    )}
+                    {(account.steam_country || account.country) && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Country:</span>
+                        <span className="text-gray-200 font-medium">{account.steam_country || account.country}</span>
+                      </div>
+                    )}
+                    {account.item_origin && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Origin:</span>
+                        <span className="text-gray-200 font-medium capitalize">{account.item_origin}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
-                    <div className="font-bold text-purple-400 text-lg">{account.channels}</div>
-                    <div className="text-gray-400">Channels</div>
-                  </div>
-                </div>
-              )}
 
-              {/* Instagram/TikTok Stats */}
-              {(account.followers !== undefined) && (
-                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                  <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
-                    <div className="font-bold text-purple-400 text-lg">{account.followers}</div>
-                    <div className="text-gray-400">Followers</div>
-                  </div>
-                  <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
-                    <div className="font-bold text-purple-400 text-lg">{account.following}</div>
-                    <div className="text-gray-400">Following</div>
-                  </div>
-                </div>
-              )}
+                  {/* Telegram/Discord Stats */}
+                  {(account.chats !== undefined) && (
+                    <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                      <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
+                        <div className="font-bold text-purple-400 text-lg">{account.chats}</div>
+                        <div className="text-gray-400">Chats</div>
+                      </div>
+                      <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
+                        <div className="font-bold text-purple-400 text-lg">{account.channels}</div>
+                        <div className="text-gray-400">Channels</div>
+                      </div>
+                    </div>
+                  )}
 
-              {/* Fortnite Stats */}
-              {(account.level !== undefined) && (
-                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                  <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
-                    <div className="font-bold text-purple-400 text-lg">{account.level}</div>
-                    <div className="text-gray-400">Level</div>
-                  </div>
-                  <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
-                    <div className="font-bold text-purple-400 text-lg">{account.skins}</div>
-                    <div className="text-gray-400">Skins</div>
-                  </div>
-                </div>
-              )}
+                  {/* Instagram/TikTok Stats */}
+                  {(account.followers !== undefined) && (
+                    <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                      <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
+                        <div className="font-bold text-purple-400 text-lg">{account.followers}</div>
+                        <div className="text-gray-400">Followers</div>
+                      </div>
+                      <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
+                        <div className="font-bold text-purple-400 text-lg">{account.following}</div>
+                        <div className="text-gray-400">Following</div>
+                      </div>
+                    </div>
+                  )}
 
-              {/* miHoYo Stats */}
-              {(account.characters !== undefined) && (
-                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                  <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
-                    <div className="font-bold text-purple-400 text-lg">{account.characters}</div>
-                    <div className="text-gray-400">Characters</div>
-                  </div>
-                  <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
-                    <div className="font-bold text-purple-400 text-lg">{account.primogems}</div>
-                    <div className="text-gray-400">Primogems</div>
-                  </div>
-                </div>
-              )}
+                  {/* Fortnite Stats */}
+                  {(account.level !== undefined) && (
+                    <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                      <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
+                        <div className="font-bold text-purple-400 text-lg">{account.level}</div>
+                        <div className="text-gray-400">Level</div>
+                      </div>
+                      <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
+                        <div className="font-bold text-purple-400 text-lg">{account.skins}</div>
+                        <div className="text-gray-400">Skins</div>
+                      </div>
+                    </div>
+                  )}
 
-              {/* Valorant Stats */}
-              {(account.rank !== undefined) && (
-                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                  <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
-                    <div className="font-bold text-purple-400 text-lg">{account.rank}</div>
-                    <div className="text-gray-400">Rank</div>
-                  </div>
-                  <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
-                    <div className="font-bold text-purple-400 text-lg">{account.agents}</div>
-                    <div className="text-gray-400">Agents</div>
-                  </div>
-                </div>
-              )}
+                  {/* miHoYo Stats */}
+                  {(account.characters !== undefined) && (
+                    <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                      <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
+                        <div className="font-bold text-purple-400 text-lg">{account.characters}</div>
+                        <div className="text-gray-400">Characters</div>
+                      </div>
+                      <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
+                        <div className="font-bold text-purple-400 text-lg">{account.primogems}</div>
+                        <div className="text-gray-400">Primogems</div>
+                      </div>
+                    </div>
+                  )}
 
-              {/* Roblox Stats */}
-              {(account.robux !== undefined) && (
-                <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
-                  <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
-                    <div className="font-bold text-purple-400 text-lg">{account.robux}</div>
-                    <div className="text-gray-400">Robux</div>
-                  </div>
-                  <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
-                    <div className="font-bold text-purple-400 text-lg">{account.games}</div>
-                    <div className="text-gray-400">Games</div>
-                  </div>
-                </div>
-              )}
+                  {/* Valorant Stats */}
+                  {(account.rank !== undefined) && (
+                    <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                      <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
+                        <div className="font-bold text-purple-400 text-lg">{account.rank}</div>
+                        <div className="text-gray-400">Rank</div>
+                      </div>
+                      <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
+                        <div className="font-bold text-purple-400 text-lg">{account.agents}</div>
+                        <div className="text-gray-400">Agents</div>
+                      </div>
+                    </div>
+                  )}
 
-              {/* Minecraft Stats */}
-              {(account.version !== undefined) && (
-                <div className="mb-4">
-                  <p className="text-sm text-gray-400 mb-2">Version:</p>
-                  <span className="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded border border-gray-600">
-                    {account.version}
-                  </span>
-                </div>
-              )}
+                  {/* Roblox Stats */}
+                  {(account.robux !== undefined) && (
+                    <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
+                      <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
+                        <div className="font-bold text-purple-400 text-lg">{account.robux}</div>
+                        <div className="text-gray-400">Robux</div>
+                      </div>
+                      <div className="text-center p-2 bg-gray-800 rounded-lg border border-gray-600">
+                        <div className="font-bold text-purple-400 text-lg">{account.games}</div>
+                        <div className="text-gray-400">Games</div>
+                      </div>
+                    </div>
+                  )}
 
-              <button className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium">
-                View Details
-              </button>
+                  {/* Minecraft Stats */}
+                  {(account.version !== undefined) && (
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-400 mb-2">Version:</p>
+                      <span className="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded border border-gray-600">
+                        {account.version}
+                      </span>
+                    </div>
+                  )}
+
+                  <a 
+                    href={`/acc/?id=${account.id}`}
+                    className="block w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium text-center"
+                  >
+                    View Details
+                  </a>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )
         )}
 
         {/* Empty State */}
@@ -407,15 +513,15 @@ function App() {
               <ul className="space-y-2 text-gray-400">
                 <li><a href="#" className="hover:text-purple-400 transition-colors">Gaming</a></li>
                 <li><a href="#" className="hover:text-purple-400 transition-colors">Social Media</a></li>
-                <li><a href="#" className="hover:text-purple-400 transition-colors">Streaming</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">Digital Services</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-lg font-semibold mb-4 text-purple-400">Connect</h4>
+              <h4 className="text-lg font-semibold mb-4 text-purple-400">Contact</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-purple-400 transition-colors">Telegram</a></li>
-                <li><a href="#" className="hover:text-purple-400 transition-colors">Twitter</a></li>
-                <li><a href="#" className="hover:text-purple-400 transition-colors">Discord</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">Support Center</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">Live Chat</a></li>
+                <li><a href="#" className="hover:text-purple-400 transition-colors">Community</a></li>
               </ul>
             </div>
           </div>
@@ -428,4 +534,15 @@ function App() {
   )
 }
 
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<MainPage />} />
+      <Route path="/debug" element={<DebugPage />} />
+      <Route path="/acc" element={<AccountDetailPage />} />
+    </Routes>
+  )
+}
+
 export default App
+ 
