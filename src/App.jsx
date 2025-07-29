@@ -132,14 +132,6 @@ function MainPage() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
-              <button 
-                onClick={handleTestAPI}
-                className="bg-blue-700 hover:bg-blue-600 text-blue-100 hover:text-white px-3 py-2 rounded text-sm transition-colors flex items-center space-x-2"
-                title="Test API Connection & Steam Endpoint"
-              >
-                <Icon icon="material-symbols:api" className="w-4 h-4" />
-                <span>Test API</span>
-              </button>
               <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
                 Login
               </button>
