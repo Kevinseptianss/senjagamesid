@@ -141,8 +141,6 @@ class ZelenkaAPI {
     const steamParams = {
       page: 1,
       order_by: 'pdate_to_down',
-      // Default filter: maximum 14 days inactive (accounts active within 14 days)
-      daybreak: 14,
       ...params
     };
 
@@ -185,13 +183,6 @@ class ZelenkaAPI {
       delete steamParams['country[]'];
     }
 
-    // Remove undefined, null, and empty string values before returning
-    Object.keys(steamParams).forEach(key => {
-      if (steamParams[key] === undefined || steamParams[key] === null || steamParams[key] === '') {
-        delete steamParams[key];
-      }
-    });
-
     return steamParams;
   }
 
@@ -202,8 +193,6 @@ class ZelenkaAPI {
       'game[]': [gameId], // Array format for games
       page: 1,
       order_by: 'pdate_to_down',
-      // Default filter: maximum 14 days inactive (accounts active within 14 days)
-      daybreak: 14,
       ...additionalParams
     };
     

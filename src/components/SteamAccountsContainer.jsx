@@ -2,7 +2,6 @@ import SteamAccountCard from './SteamAccountCard'
 
 const SteamAccountsContainer = ({ accounts, loading, error }) => {
   // Debug log to see what accounts are being passed
-  console.log('SteamAccountsContainer received:', { accounts, loading, error })
   
   // Filter accounts to only show those with games
   const accountsWithGames = accounts?.filter(account => {

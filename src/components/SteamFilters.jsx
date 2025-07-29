@@ -241,19 +241,20 @@ const SteamFilters = ({ onFilterChange, loading }) => {
   const handleApplyFilters = () => {
     // Map the filter parameters to the proper Steam API parameter names
     const apiParams = {
-      // Basic parameters
-      pmin: filters.pmin || undefined,
-      pmax: filters.pmax || undefined,
-      title: filters.title || undefined,
+      // Basic parameters - only include if they have actual values
+      ...(filters.pmin && { pmin: filters.pmin }),
+      ...(filters.pmax && { pmax: filters.pmax }),
+      ...(filters.title && { title: filters.title }),
       
       // Steam-specific parameters (these need to match the actual API parameter names)
-      ...(filters.game && filters.game.length > 0 && { 'game[]': filters.game }),
-      ...(filters.origin && filters.origin.length > 0 && { 'origin[]': filters.origin }),
-      ...(filters.not_origin && filters.not_origin.length > 0 && { 'not_origin[]': filters.not_origin }),
-      ...(filters.country && filters.country.length > 0 && { 'country[]': filters.country }),
-      ...(filters.not_country && filters.not_country.length > 0 && { 'not_country[]': filters.not_country }),
+      // Convert game array to indexed format for API
+      ...(filters.game && filters.game.length > 0 && { game: filters.game }),
+      ...(filters.origin && filters.origin.length > 0 && { origin: filters.origin }),
+      ...(filters.not_origin && filters.not_origin.length > 0 && { not_origin: filters.not_origin }),
+      ...(filters.country && filters.country.length > 0 && { country: filters.country }),
+      ...(filters.not_country && filters.not_country.length > 0 && { not_country: filters.not_country }),
       
-      // Other Steam filters
+      // Other Steam filters - only include if they have actual values
       ...(filters.eg && { eg: filters.eg }),
       ...(filters.daybreak && { daybreak: filters.daybreak }),
       ...(filters.mafile && { mafile: filters.mafile }),
@@ -268,7 +269,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
       page: filters.page || 1
     };
     
-    console.log('Applying Steam filters:', apiParams);
     onFilterChange(apiParams);
   }
 
@@ -301,13 +301,14 @@ const SteamFilters = ({ onFilterChange, loading }) => {
   }
 
   const handleQuickGameFilter = (gameId, gameName) => {
+    // Toggle the game filter - if already selected, remove it; if not, add it
+    const currentGames = filters.game || [];
+    const newGames = currentGames.includes(gameId) 
+      ? currentGames.filter(g => g !== gameId)  // Remove if already selected
+      : [...currentGames, gameId];              // Add if not selected
+    
     // Set the game filter
-    handleFilterChange('game', [gameId])
-    
-    // Clear any text search to focus only on the game
-    handleFilterChange('title', '')
-    
-    console.log(`🎮 Quick filter applied for: ${gameName} (ID: ${gameId})`)
+    handleFilterChange('game', newGames)
     
     // Auto-apply the filter
     setTimeout(() => handleApplyFilters(), 100)
@@ -346,7 +347,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
       rust: false
     })
     
-    console.log('🧹 All filters cleared')
     // Auto-apply to show all accounts
     setTimeout(() => handleApplyFilters(), 100)
   }
@@ -385,15 +385,22 @@ const SteamFilters = ({ onFilterChange, loading }) => {
             <button
               key={game.value}
               onClick={() => handleQuickGameFilter(game.value, game.label)}
-              className={`flex items-center justify-center space-x-1 p-3 rounded-lg text-sm transition-all duration-200 border ${
+              className={`flex items-center justify-center space-x-2 p-3 rounded-lg text-sm transition-all duration-200 border ${
                 filters.game && filters.game.includes(game.value)
                   ? 'bg-green-600 hover:bg-green-500 text-white border-green-500'
                   : 'bg-gray-800 hover:bg-green-600 text-gray-300 hover:text-white border-gray-600 hover:border-green-500'
               }`}
               title={`Filter accounts with ${game.label}`}
             >
-              <span className="text-lg">{game.icon}</span>
-              <span className="font-medium">{game.label}</span>
+              <img 
+                src={`https://nztcdn.com/steam/icon/${game.value}.webp`}
+                alt={game.label}
+                className="w-5 h-5 rounded flex-shrink-0"
+                onError={(e) => {
+                  e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iNCIgZmlsbD0iIzZCNzI4MCIvPgo8cGF0aCBkPSJNMTIgN0M5Ljc5IDcgOCA4Ljc5IDggMTFTOS43OSAxNSAxMiAxNSAxNiAxMy4yMSAxNiAxMSAxNC4yMSA3IDEyIDdaTTEyIDEzQzEwLjkgMTMgMTAgMTIuMSAxMCAxMUMxMCAxMC45IDEwIDEwIDEwIDEwSDE0QzE0IDEwIDEzIDEwIDEzIDEwQzEzIDEyLjEgMTIuMSAxMyAxMiAxM1oiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2Zz4K'
+                }}
+              />
+              <span className="font-medium text-xs">{game.label}</span>
             </button>
           ))}
         </div>
@@ -416,19 +423,47 @@ const SteamFilters = ({ onFilterChange, loading }) => {
             <div className="filterColumn space-y-4">
               {/* Games Selection */}
               <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Select Games (without VAC)</label>
-                <select
-                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  value={filters.game[0] || ''}
-                  onChange={(e) => handleFilterChange('game', e.target.value ? [e.target.value] : [])}
-                >
-                  <option value="">Select a game</option>
-                  {gamesList.map(game => (
-                    <option key={game.value} value={game.value} className="py-1">
-                      {game.label}
-                    </option>
+                <label className="text-gray-300 text-sm font-medium">Select Games (without VAC) - Multiple Selection</label>
+                <div className="bg-gray-800 border border-gray-600 rounded-lg p-2 max-h-32 overflow-y-auto">
+                  {gamesList.slice(0, 10).map(game => (
+                    <label key={game.value} className="flex items-center space-x-2 py-1 hover:bg-gray-700 px-2 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={filters.game.includes(game.value)}
+                        onChange={(e) => {
+                          const newGames = e.target.checked 
+                            ? [...filters.game, game.value]
+                            : filters.game.filter(g => g !== game.value);
+                          handleFilterChange('game', newGames);
+                        }}
+                        className="rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="text-gray-300 text-sm">{game.label}</span>
+                    </label>
                   ))}
-                </select>
+                </div>
+                {filters.game.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {filters.game.map(gameId => {
+                      const game = gamesList.find(g => g.value === gameId);
+                      return (
+                        <span key={gameId} className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
+                          <span>{game?.label || gameId}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newGames = filters.game.filter(g => g !== gameId);
+                              handleFilterChange('game', newGames);
+                            }}
+                            className="text-white hover:text-gray-300"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Account Origin */}

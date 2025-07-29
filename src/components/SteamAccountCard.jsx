@@ -1,25 +1,23 @@
 import { Icon } from '@iconify/react'
 
 const SteamAccountCard = ({ account }) => {
-  // Debug log to see the account data
-  console.log('SteamAccountCard received account:', account)
-  console.log('Account keys:', Object.keys(account || {}))
-  console.log('Steam games data:', account?.steam_full_games)
-  console.log('Price data:', { 
-    priceWithSellerFeeLabel: account?.priceWithSellerFeeLabel, 
-    price: account?.price,
-    steam_last_activity: account?.steam_last_activity,
-    item_origin: account?.item_origin
-  })
-  
   // Format price
   const price = account.priceWithSellerFeeLabel || `$${account.price || 0}`
   
   // Get warranty info
   const getWarrantyInfo = () => {
-    if (account.hasWarranty) return account.warranty
-    if (account.guarantee?.durationPhrase) return account.guarantee.durationPhrase
-    return '24 hours warranty'
+    if (account.hasWarranty) return `${account.warranty} Warranty`
+    if (account.guarantee?.durationPhrase) return `${account.guarantee.durationPhrase} Warranty`
+    if (account.eg !== undefined) {
+      // Map guarantee types to descriptions
+      const guaranteeMap = {
+        '-1': '12 hours Warranty',
+        '0': '24 hours Warranty', 
+        '1': '3 days Warranty'
+      }
+      return guaranteeMap[account.eg] || '24 hours Warranty'
+    }
+    return '24 hours Warranty'
   }
 
   // Get warning color class based on last seen
@@ -51,15 +49,26 @@ const SteamAccountCard = ({ account }) => {
     
     let dateObj
     if (typeof timestamp === 'number') {
+      // Handle Unix timestamp (seconds) - convert to milliseconds
       dateObj = new Date(timestamp * 1000)
     } else if (typeof timestamp === 'string') {
-      dateObj = new Date(timestamp)
+      // Handle string dates
+      const parsed = parseInt(timestamp)
+      if (!isNaN(parsed) && parsed > 0) {
+        // If it's a valid number string, treat as Unix timestamp
+        dateObj = new Date(parsed * 1000)
+      } else {
+        // Otherwise try to parse as date string
+        dateObj = new Date(timestamp)
+      }
     } else {
       return 'Unknown'
     }
     
-    if (isNaN(dateObj.getTime())) return 'Unknown'
+    // Validate the date
+    if (isNaN(dateObj.getTime()) || dateObj.getTime() === 0) return 'Unknown'
     
+    // Format the date
     return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -112,97 +121,120 @@ const SteamAccountCard = ({ account }) => {
     <a 
       href={`/acc/?id=${account.item_id || account.id}`} 
       target="_blank" 
-      className="account bg-gray-900 border border-gray-700 hover:border-purple-500 transition-all duration-300 rounded-lg overflow-hidden relative block"
+      className="account bg-gray-900 border border-gray-700 hover:border-purple-500 transition-all duration-300 rounded-xl overflow-hidden relative block shadow-lg hover:shadow-xl flex flex-col min-h-[400px]"
     >
-      {/* Right Column - Price */}
-      <div className="rightCol absolute top-4 right-4 z-10">
-        <div className="marketIndexItem--Price">
-          <span className="Value text-2xl font-bold text-purple-400">{price}</span>
+      {/* Header with Price */}
+      <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-4 py-3 flex justify-between items-center border-b border-gray-700">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+          <span className="text-sm text-gray-300 font-medium">Steam Account</span>
+        </div>
+        <div className="price-badge">
+          <span className="text-xl font-bold text-purple-400">{price}</span>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="marketIndexItem--Info p-6 pt-16">
-        {/* Mail Status */}
-        <div className="column warn-green mb-2">
-          <p className="text-green-400 text-sm">
-            <Icon icon="mdi:thumb-up" className="inline mr-1" />
-            Mail
-          </p>
-        </div>
+      <div className="p-4 space-y-3 flex-1">
+        {/* Status Row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            {/* Mail Status */}
+            <div className="flex items-center space-x-1 bg-green-900 bg-opacity-50 px-2 py-1 rounded-lg border border-green-700">
+              <Icon icon="mdi:email-check" className="text-green-400 text-sm" />
+              <span className="text-green-400 text-xs font-medium">Mail Access</span>
+            </div>
+            
+            {/* Warranty */}
+            <div className="flex items-center space-x-1 bg-yellow-900 bg-opacity-50 px-2 py-1 rounded-lg border border-yellow-700">
+              <Icon icon="mdi:shield-check" className="text-yellow-400 text-sm" />
+              <span className="text-yellow-400 text-xs font-medium">{getWarrantyInfo()}</span>
+            </div>
+          </div>
 
-        {/* Warranty */}
-        <div className="column warn-yellow mb-2">
-          <span className="text-yellow-400 text-sm">
-            <Icon icon="mdi:thumb-up" className="inline mr-1" />
-            {getWarrantyInfo()}
-          </span>
-        </div>
-
-        {/* SDA */}
-        <div className="column mb-2">
-          <p className="text-gray-300 text-sm" title=".maFile is a file for managing a Steam account through the Mobile Guard Authenticator">
-            SDA
-          </p>
+          {/* SDA Status */}
+          <div className="flex items-center space-x-1 bg-gray-800 px-2 py-1 rounded-lg border border-gray-600">
+            <Icon icon="mdi:security" className="text-gray-400 text-sm" />
+            <span className="text-gray-400 text-xs">SDA</span>
+          </div>
         </div>
 
         {/* Last Seen */}
-        <div className={`column ${getLastSeenWarning()} mb-4`}>
-          <p className={`text-sm ${
+        <div className={`flex items-center space-x-2 p-2 rounded-lg border ${
+          getLastSeenWarning() === 'warn-green' ? 'bg-green-900 bg-opacity-30 border-green-700' : 
+          getLastSeenWarning() === 'warn-yellow' ? 'bg-yellow-900 bg-opacity-30 border-yellow-700' : 
+          'bg-red-900 bg-opacity-30 border-red-700'
+        }`}>
+          <Icon icon="mdi:clock-outline" className={`text-sm ${
+            getLastSeenWarning() === 'warn-green' ? 'text-green-400' : 
+            getLastSeenWarning() === 'warn-yellow' ? 'text-yellow-400' : 'text-red-400'
+          }`} />
+          <span className={`text-xs font-medium ${
             getLastSeenWarning() === 'warn-green' ? 'text-green-400' : 
             getLastSeenWarning() === 'warn-yellow' ? 'text-yellow-400' : 'text-red-400'
           }`}>
             Last seen {formatDate(account.steam_last_activity || account.account_last_activity || account.lastSeen)}
-          </p>
+          </span>
         </div>
 
         {/* Steam Stats */}
         {(account.steam_level || account.steam_friend_count || account.steam_balance) && (
-          <div className="steam-stats mb-4">
-            <div className="grid grid-cols-3 gap-2 text-center">
-              {account.steam_level !== undefined && account.steam_level > 0 && (
-                <div className="bg-gray-800 p-2 rounded border border-gray-600">
-                  <div className="text-purple-400 font-bold text-sm">{account.steam_level}</div>
-                  <div className="text-gray-400 text-xs">Level</div>
-                </div>
-              )}
-              {account.steam_friend_count !== undefined && (
-                <div className="bg-gray-800 p-2 rounded border border-gray-600">
-                  <div className="text-purple-400 font-bold text-sm">{account.steam_friend_count}</div>
-                  <div className="text-gray-400 text-xs">Friends</div>
-                </div>
-              )}
-              {account.steam_balance && account.steam_balance !== "¥ 0.00" && account.steam_balance !== "$0.00" && (
-                <div className="bg-gray-800 p-2 rounded border border-gray-600">
-                  <div className="text-green-400 font-bold text-sm">{account.steam_balance}</div>
-                  <div className="text-gray-400 text-xs">Balance</div>
-                </div>
-              )}
-            </div>
+          <div className="grid grid-cols-3 gap-2">
+            {account.steam_level !== undefined && account.steam_level > 0 && (
+              <div className="bg-gray-800 p-2 rounded-lg border border-gray-600 text-center">
+                <div className="text-purple-400 font-bold text-sm">{account.steam_level}</div>
+                <div className="text-gray-400 text-xs">Level</div>
+              </div>
+            )}
+            {account.steam_friend_count !== undefined && (
+              <div className="bg-gray-800 p-2 rounded-lg border border-gray-600 text-center">
+                <div className="text-blue-400 font-bold text-sm">{account.steam_friend_count}</div>
+                <div className="text-gray-400 text-xs">Friends</div>
+              </div>
+            )}
+            {account.steam_balance && account.steam_balance !== "¥ 0.00" && account.steam_balance !== "$0.00" && (
+              <div className="bg-gray-800 p-2 rounded-lg border border-gray-600 text-center">
+                <div className="text-green-400 font-bold text-sm">{account.steam_balance}</div>
+                <div className="text-gray-400 text-xs">Balance</div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Games Container */}
-        <div className="games-container mb-4">
-          <div className="mb-2">
-            <span className="text-gray-400 text-sm">
-              Games ({account.steam_game_count || account.gameCount || getMainGames().length || 0}):
+        {/* Games Section */}
+        <div className="games-section">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-gray-300 text-sm font-medium flex items-center space-x-1">
+              <Icon icon="mdi:gamepad-variant" className="text-purple-400" />
+              <span>Games ({account.steam_game_count || account.gameCount || getMainGames().length || 0})</span>
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          
+          <div className="space-y-2">
             {getMainGames().length > 0 ? getMainGames().map((game, index) => (
-              <div key={index} className="game flex items-center bg-gray-800 p-2 rounded border border-gray-600">
-                <img 
-                  src={game.appid && game.appid !== 'random' ? `https://nztcdn.com/steam/icon/${game.appid}.webp` : '/src/assets/react.svg'}
-                  alt={game.title}
-                  className="w-6 h-6 rounded mr-2 flex-shrink-0"
-                  onError={(e) => {
-                    e.target.src = '/src/assets/react.svg' // Fallback image
-                  }}
-                />
+              <div key={index} className="flex items-center bg-gray-800 p-2 rounded-lg border border-gray-600 hover:border-gray-500 transition-colors">
+                <div className="w-6 h-6 rounded mr-3 flex-shrink-0 flex items-center justify-center">
+                  {game.appid && game.appid !== 'random' && !isNaN(Number(game.appid)) ? (
+                    <img 
+                      src={`https://nztcdn.com/steam/icon/${game.appid}.webp`}
+                      alt={game.title}
+                      className="w-6 h-6 rounded"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-6 h-6 bg-gray-700 rounded flex items-center justify-center text-gray-400 text-sm font-bold"
+                    style={{display: game.appid && game.appid !== 'random' && !isNaN(Number(game.appid)) ? 'none' : 'flex'}}
+                  >
+                    ?
+                  </div>
+                </div>
                 <div className="flex-1 min-w-0">
                   <div 
-                    className="text-xs text-gray-300 hover:text-white cursor-help truncate"
+                    className="text-xs text-gray-300 hover:text-white cursor-help truncate font-medium"
                     title={game.playtime_forever ? `${game.title} - ${formatHours(game.playtime_forever)}` : game.title}
                   >
                     {game.title}
@@ -215,8 +247,9 @@ const SteamAccountCard = ({ account }) => {
                 </div>
               </div>
             )) : (
-              <div className="col-span-2 text-center text-gray-500 text-sm py-4">
-                No games data available
+              <div className="text-center text-gray-500 text-sm py-4 bg-gray-800 rounded-lg border border-gray-600">
+                <Icon icon="mdi:gamepad-off" className="text-2xl mb-1" />
+                <div>No games data available</div>
               </div>
             )}
           </div>
@@ -225,45 +258,41 @@ const SteamAccountCard = ({ account }) => {
           {getAdditionalGamesCount() > 0 && (
             <div className="mt-2 text-center">
               <span 
-                className="text-sm text-gray-400 bg-gray-800 px-3 py-1 rounded border border-gray-600 cursor-help"
+                className="inline-flex items-center space-x-1 text-sm text-gray-400 bg-gray-800 px-3 py-1 rounded-lg border border-gray-600 cursor-help hover:border-gray-500 transition-colors"
                 title="Click to view all games"
               >
-                +{getAdditionalGamesCount()} more games
+                <Icon icon="mdi:plus" className="text-xs" />
+                <span>{getAdditionalGamesCount()} more games</span>
               </span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Account Footer */}
-      <div className="account-footer bg-gray-800 px-6 py-3 border-t border-gray-700 flex items-center justify-between">
-        <img 
-          src="/data/assets/category/1.svg" 
-          alt="Category Icon" 
-          className="icon w-4 h-4"
-          onError={(e) => {
-            e.target.src = '/src/assets/react.svg' // Fallback
-          }}
-        />
-        <div className="uploaded flex items-center text-sm text-gray-400">
-          <span className="info-separator mx-2">•</span>
-          <time className="u-dt">
+      {/* Footer */}
+      <div className="bg-gray-800 px-4 py-3 border-t border-gray-700 flex items-center justify-between text-xs mt-auto">
+        <div className="flex items-center space-x-2">
+          <Icon icon="mdi:steam" className="text-blue-400" />
+          <span className="text-gray-400">Steam</span>
+        </div>
+        <div className="flex items-center space-x-2 text-gray-400">
+          <time className="hover:text-gray-300">
             {formatDate(account.published_date || account.created_at || account.upload_date || account.createdAt)}
           </time>
-          <span className="info-separator mx-2">•</span>
-          <span className="capitalize-first text-gray-300">
+          <span>•</span>
+          <span className="capitalize-first text-gray-300 hover:text-white">
             {account.item_origin || account.origin || account.source || 'unknown'}
           </span>
           {account.resale_item_origin && account.resale_item_origin !== account.item_origin && (
-            <span className="capitalize-first text-gray-400 ml-1">
+            <span className="capitalize-first text-gray-500">
               ({account.resale_item_origin})
             </span>
           )}
         </div>
       </div>
 
-      {/* Background Effect */}
-      <div className="sidebar_background absolute inset-0 bg-gradient-to-r from-transparent to-purple-900 opacity-0 hover:opacity-10 transition-opacity duration-300 pointer-events-none"></div>
+      {/* Hover Effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent to-purple-900 opacity-0 hover:opacity-5 transition-opacity duration-300 pointer-events-none rounded-xl"></div>
     </a>
   )
 }

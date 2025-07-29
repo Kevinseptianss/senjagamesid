@@ -2,9 +2,7 @@ import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import { useZelenkaAccounts } from './hooks/useZelenkaAccounts'
-import DebugPage from './components/DebugPage'
 import SteamPage from './components/SteamPage'
-import SteamDebugPage from './components/SteamDebugPage'
 import SteamFilters from './components/SteamFilters'
 import SteamAccountsContainer from './components/SteamAccountsContainer'
 import AccountDetailPage from './components/AccountDetailPage'
@@ -27,7 +25,6 @@ import miHoYoIcon from './assets/68258c779c36b-miHoYo.svg'
 
 function MainPage() {
   const [showSteamPage, setShowSteamPage] = useState(false)
-  const [showSteamDebug, setShowSteamDebug] = useState(false)
   const { 
     accounts: filteredAccounts, 
     loading, 
@@ -40,80 +37,56 @@ function MainPage() {
 
   // Test API functionality
   const handleTestAPI = async () => {
-    console.log('🧪 Starting comprehensive API tests...');
     
     // Test general connection
-    console.log('🔗 Testing connection...');
     const connectionTest = await zelenkaAPI.testConnection();
-    console.log('Connection test result:', connectionTest);
     
     // Test LZT Market Steam endpoint
-    console.log('🎯 Testing LZT Market Steam endpoint...');
     const lztSteamTest = await zelenkaAPI.testLZTMarketSteamEndpoint();
-    console.log('LZT Market Steam endpoint test result:', lztSteamTest);
     
     // Test general pagination first
-    console.log('📄 Testing general pagination...');
     const generalPaginationTest = await zelenkaAPI.testGeneralPagination();
-    console.log('General pagination test result:', generalPaginationTest);
     
     // Test Steam endpoint specifically
-    console.log('🎮 Testing Steam endpoint...');
     const steamTest = await zelenkaAPI.testSteamEndpoint();
-    console.log('Steam endpoint test result:', steamTest);
     
     // Test Steam pagination
-    console.log('📄 Testing Steam pagination...');
     const paginationTest = await zelenkaAPI.testSteamPagination();
-    console.log('Steam pagination test result:', paginationTest);
     
     // Test PUBG filtering with node-lzt format
-    console.log('🎮 Testing PUBG filtering with node-lzt format...');
     const pubgTest = await zelenkaAPI.testPUBGFiltering();
-    console.log('PUBG filtering test result:', pubgTest);
     
     // Test Steam category parameters
-    console.log('📋 Testing Steam category parameters...');
     const steamParamsTest = await zelenkaAPI.testSteamCategoryParams();
-    console.log('Steam category params test result:', steamParamsTest);
     
     // Try getting Steam accounts (single page)
-    console.log('🧪 Testing getSteamAccounts (single page)...');
     try {
       const steamAccounts = await zelenkaAPI.getSteamAccounts();
-      console.log('Steam accounts result:', steamAccounts);
     } catch (error) {
       console.error('Steam accounts test failed:', error);
     }
     
     // Try getting Steam accounts (multiple pages)
-    console.log('🧪 Testing getSteamAccountsMultiplePages...');
     try {
       const steamAccountsMulti = await zelenkaAPI.getSteamAccountsMultiplePages({}, 3);
-      console.log('Steam accounts multi-page result:', steamAccountsMulti);
     } catch (error) {
       console.error('Steam accounts multi-page test failed:', error);
     }
     
     // Test game-specific filtering (PUBG)
-    console.log('🎮 Testing PUBG-specific filtering...');
     try {
       const pubgAccounts = await zelenkaAPI.getSteamAccountsByGame('578080', 'PUBG');
-      console.log('PUBG accounts result:', pubgAccounts);
     } catch (error) {
       console.error('PUBG accounts test failed:', error);
     }
     
     // Test game-specific filtering (CS2)
-    console.log('🎯 Testing CS2-specific filtering...');
     try {
       const cs2Accounts = await zelenkaAPI.getSteamAccountsByGame('730', 'CS2');
-      console.log('CS2 accounts result:', cs2Accounts);
     } catch (error) {
       console.error('CS2 accounts test failed:', error);
     }
     
-    console.log('✅ All API tests completed! Check console for detailed results.');
   }
 
   const categories = [
@@ -142,11 +115,6 @@ function MainPage() {
     { name: 'Roblox', icon: 'simple-icons:roblox', color: '#E13838', isLocal: false }
   ]
 
-  // Show Steam debug page if enabled
-  if (showSteamDebug) {
-    return <SteamDebugPage onBack={() => setShowSteamDebug(false)} />
-  }
-
   // Show Steam page if enabled
   if (showSteamPage) {
     return <SteamPage onBack={() => setShowSteamPage(false)} />
@@ -172,14 +140,6 @@ function MainPage() {
                 <Icon icon="material-symbols:api" className="w-4 h-4" />
                 <span>Test API</span>
               </button>
-              <button 
-                onClick={() => setShowSteamDebug(true)}
-                className="bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white px-3 py-2 rounded text-sm transition-colors flex items-center space-x-2"
-                title="Steam API Debug"
-              >
-                <Icon icon="material-symbols:bug-report" className="w-4 h-4" />
-                <span>Steam Debug</span>
-              </button>
               <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
                 Login
               </button>
@@ -194,14 +154,6 @@ function MainPage() {
       {/* Categories */}
       <section className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Mock Data Banner */}
-          {import.meta.env.VITE_USE_MOCK_DATA === 'true' && (
-            <div className="bg-yellow-900 border border-yellow-700 text-yellow-100 px-4 py-3 rounded-lg mb-6">
-              <p className="font-medium">⚠️ Demo Mode</p>
-              <p className="text-sm mt-1">Currently using mock data for demonstration. API integration in progress.</p>
-            </div>
-          )}
-          
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-4">
             {categories.map((category) => {
               return (
@@ -263,7 +215,6 @@ function MainPage() {
         {selectedCategory === 'Steam' && (
           <SteamFilters 
             onFilterChange={(filters) => {
-              console.log('Steam filters applied:', filters);
               // Apply the filters to the Steam API call
               updateSteamFilters(filters);
             }} 
@@ -538,7 +489,6 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<MainPage />} />
-      <Route path="/debug" element={<DebugPage />} />
       <Route path="/acc" element={<AccountDetailPage />} />
     </Routes>
   )

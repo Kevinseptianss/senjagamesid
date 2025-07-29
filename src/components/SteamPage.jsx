@@ -124,16 +124,12 @@ const SteamPage = ({ onBack }) => {
     setError(null)
 
     try {
-      console.log('Fetching Steam accounts with filters:', newFilters)
       const response = await api.getSteamAccounts(newFilters)
       
       // Debug: Log the raw API response
-      console.log('Raw Steam API Response:', response)
       
       if (response && response.items) {
-        console.log('Sample account data:', response.items[0])
         const transformedAccounts = response.items.map(transformSteamAccount)
-        console.log('Sample transformed account:', transformedAccounts[0])
         setAccounts(transformedAccounts)
         
         // Calculate total pages if pagination info is available
@@ -141,12 +137,9 @@ const SteamPage = ({ onBack }) => {
           setTotalPages(Math.ceil(response.total / response.limit))
         }
       } else if (response && Array.isArray(response)) {
-        console.log('Array response - sample account:', response[0])
         const transformedAccounts = response.map(transformSteamAccount)
-        console.log('Sample transformed account:', transformedAccounts[0])
         setAccounts(transformedAccounts)
       } else {
-        console.log('No items found in response:', response)
         setAccounts([])
       }
     } catch (err) {
