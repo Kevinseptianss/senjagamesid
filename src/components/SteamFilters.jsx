@@ -110,10 +110,17 @@ const SteamFilters = ({ onFilterChange, loading }) => {
     rust: false
   })
 
-  // Popular searches data
+  // Popular searches data - now with game IDs and icons like Quick Game Filters
   const popularSearches = [
-    'CS2 Prime', 'Dead by Daylight', 'InZOI', 'Gorilla Tag', 'Rust', 
-    'Elden Ring', 'Schedule I', 'R.E.P.O.', 'BG3'
+    { value: '730', label: 'CS2 Prime', appid: '730' },
+    { value: '381210', label: 'Dead by Daylight', appid: '381210' },
+    { value: '2623090', label: 'InZOI', appid: '2623090' },
+    { value: '1142710', label: 'Gorilla Tag', appid: '1142710' },
+    { value: '252490', label: 'Rust', appid: '252490' },
+    { value: '1245620', label: 'Elden Ring', appid: '1245620' },
+    { value: '1649240', label: 'Schedule I', appid: '1649240' },
+    { value: '2056610', label: 'R.E.P.O.', appid: '2056610' },
+    { value: '1086940', label: 'BG3', appid: '1086940' }
   ]
 
   // Quick game filters - one-click filters for popular games
@@ -294,9 +301,17 @@ const SteamFilters = ({ onFilterChange, loading }) => {
     }
   }
 
-  const handlePopularSearchClick = (searchTerm) => {
-    handleFilterChange('title', searchTerm)
-    // Auto-apply the filter when a popular search is clicked
+  const handlePopularSearchClick = (gameId, gameName) => {
+    // Toggle the game filter - if already selected, remove it; if not, add it (same as Quick Game Filter)
+    const currentGames = filters.game || [];
+    const newGames = currentGames.includes(gameId) 
+      ? currentGames.filter(g => g !== gameId)  // Remove if already selected
+      : [...currentGames, gameId];              // Add if not selected
+    
+    // Set the game filter
+    handleFilterChange('game', newGames)
+    
+    // Auto-apply the filter
     setTimeout(() => handleApplyFilters(), 100)
   }
 
@@ -353,20 +368,53 @@ const SteamFilters = ({ onFilterChange, loading }) => {
 
   return (
     <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 mb-6">
-      {/* Popular Searches */}
+      {/* Popular Game Searches */}
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-purple-400 mb-4">Popular Searches</h3>
-        <div className="flex flex-wrap gap-2">
-          {popularSearches.map((term, index) => (
+        <h3 className="text-lg font-semibold text-purple-400 mb-4">🔥 Popular Game Searches</h3>
+        <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
+          {popularSearches.map((game) => (
             <button
-              key={index}
-              onClick={() => handlePopularSearchClick(term)}
-              className="bg-gray-800 hover:bg-purple-600 text-gray-300 hover:text-white px-3 py-1 rounded-lg text-sm transition-colors border border-gray-600 hover:border-purple-500"
+              key={game.value}
+              onClick={() => handlePopularSearchClick(game.value, game.label)}
+              className={`flex items-center justify-center space-x-2 p-3 rounded-lg text-sm transition-all duration-200 border ${
+                filters.game && filters.game.includes(game.value)
+                  ? 'bg-purple-600 hover:bg-purple-500 text-white border-purple-500'
+                  : 'bg-gray-800 hover:bg-purple-600 text-gray-300 hover:text-white border-gray-600 hover:border-purple-500'
+              }`}
+              title={`Filter accounts with ${game.label}`}
             >
-              {term}
+              <img 
+                src={`https://nztcdn.com/steam/icon/${game.appid}.webp`}
+                alt={game.label}
+                className="w-5 h-5 rounded flex-shrink-0"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+              <div 
+                className="w-5 h-5 bg-gray-700 rounded flex items-center justify-center text-gray-400 text-sm font-bold flex-shrink-0"
+                style={{display: 'none'}}
+              >
+                ?
+              </div>
+              <span className="font-medium text-xs truncate">{game.label}</span>
             </button>
           ))}
         </div>
+        {filters.game && filters.game.length > 0 && (
+          <div className="mt-3 p-3 bg-purple-900 border border-purple-600 rounded-lg">
+            <p className="text-purple-200 text-sm">
+              <Icon icon="material-symbols:filter-alt" className="inline w-4 h-4 mr-1" />
+              Filtering accounts with: <strong>
+                {filters.game.map(gameId => {
+                  const game = popularSearches.find(g => g.value === gameId) || quickGameFilters.find(g => g.value === gameId);
+                  return game?.label || gameId;
+                }).join(', ')}
+              </strong>
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Quick Game Filters */}

@@ -1,9 +1,18 @@
 // API service for LZT Market API
 class ZelenkaAPI {
   constructor() {
-    // Use proxy in development, direct API in production
+    // Use different base URLs for development vs production
     const isDev = import.meta.env.MODE === 'development';
-    this.baseURL = isDev ? '/api' : 'https://prod-api.lzt.market';
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (isDev || isLocalhost) {
+      // Development: use proxy or direct API
+      this.baseURL = isDev ? '/api' : 'https://prod-api.lzt.market';
+    } else {
+      // Production: use Vercel serverless function proxy
+      this.baseURL = '/api/lzt-proxy';
+    }
+    
     this.authURL = 'https://prod-api.lolz.live/oauth/token';
     this.token = import.meta.env.VITE_ZELENKA_TOKEN;
     this.clientId = import.meta.env.VITE_ZELENKA_CLIENT_ID;
