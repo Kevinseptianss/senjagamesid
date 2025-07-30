@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import { useZelenkaAccounts } from './hooks/useZelenkaAccounts'
@@ -25,6 +25,7 @@ import miHoYoIcon from './assets/68258c779c36b-miHoYo.svg'
 
 function MainPage() {
   const [showSteamPage, setShowSteamPage] = useState(false)
+  const [lztCategories, setLztCategories] = useState([])
   const { 
     accounts: filteredAccounts, 
     loading, 
@@ -35,85 +36,152 @@ function MainPage() {
     updateSteamFilters 
   } = useZelenkaAccounts()
 
-  // Test API functionality
-  const handleTestAPI = async () => {
-    
-    // Test general connection
-    const connectionTest = await zelenkaAPI.testConnection();
-    
-    // Test LZT Market Steam endpoint
-    const lztSteamTest = await zelenkaAPI.testLZTMarketSteamEndpoint();
-    
-    // Test general pagination first
-    const generalPaginationTest = await zelenkaAPI.testGeneralPagination();
-    
-    // Test Steam endpoint specifically
-    const steamTest = await zelenkaAPI.testSteamEndpoint();
-    
-    // Test Steam pagination
-    const paginationTest = await zelenkaAPI.testSteamPagination();
-    
-    // Test PUBG filtering with node-lzt format
-    const pubgTest = await zelenkaAPI.testPUBGFiltering();
-    
-    // Test Steam category parameters
-    const steamParamsTest = await zelenkaAPI.testSteamCategoryParams();
-    
-    // Try getting Steam accounts (single page)
-    try {
-      const steamAccounts = await zelenkaAPI.getSteamAccounts();
-    } catch (error) {
-      console.error('Steam accounts test failed:', error);
+  // Load LZT categories on component mount
+  useEffect(() => {
+    const loadLZTCategories = async () => {
+      try {
+        const categoriesData = await zelenkaAPI.getCategories()
+        if (categoriesData?.categories) {
+          setLztCategories(categoriesData.categories)
+        }
+      } catch (error) {
+        console.error('Failed to load LZT categories:', error)
+      }
     }
-    
-    // Try getting Steam accounts (multiple pages)
-    try {
-      const steamAccountsMulti = await zelenkaAPI.getSteamAccountsMultiplePages({}, 3);
-    } catch (error) {
-      console.error('Steam accounts multi-page test failed:', error);
+    loadLZTCategories()
+  }, [])
+
+  // Map LZT category names to icons (with fallbacks to your existing icons)
+  const getCategoryIcon = (categoryName, categoryTitle) => {
+    const iconMap = {
+      // Gaming platforms
+      'steam': steamIcon,
+      'fortnite': fortniteIcon,
+      'epicgames': epicGamesIcon,
+      'eg': epicGamesIcon,
+      'mihoyo': miHoYoIcon,
+      'riot': 'simple-icons:riotgames',
+      'ea': 'simple-icons:ea',
+      'battlenet': battleNetIcon,
+      'uplay': 'simple-icons:ubisoft',
+      'socialclub': 'simple-icons:rockstargames',
+      
+      // Game titles
+      'minecraft': 'vscode-icons:file-type-minecraft',
+      'tarkov': 'twemoji:crossed-swords',
+      'wot': worldOfTanksIcon,
+      'wt': warThunderIcon,
+      'supercell': supercellIcon,
+      'wf': 'material-symbols:sports-esports',
+      
+      // Social & Communication
+      'telegram': 'logos:telegram',
+      'discord': 'logos:discord-icon',
+      'tiktok': 'logos:tiktok-icon',
+      'instagram': instagramIcon,
+      
+      // Services & Others
+      'gifts': 'mdi:gift',
+      'chatgpt': 'simple-icons:openai',
+      'vpn': 'material-symbols:vpn-lock',
+      'roblox': 'simple-icons:roblox'
     }
-    
-    // Test game-specific filtering (PUBG)
-    try {
-      const pubgAccounts = await zelenkaAPI.getSteamAccountsByGame('578080', 'PUBG');
-    } catch (error) {
-      console.error('PUBG accounts test failed:', error);
-    }
-    
-    // Test game-specific filtering (CS2)
-    try {
-      const cs2Accounts = await zelenkaAPI.getSteamAccountsByGame('730', 'CS2');
-    } catch (error) {
-      console.error('CS2 accounts test failed:', error);
-    }
-    
+
+    return iconMap[categoryName] || 'mdi:gamepad-variant'
   }
 
-  const categories = [
-    { name: 'Steam', icon: steamIcon, color: '#1B2838', isLocal: true },
-    { name: 'Fortnite', icon: fortniteIcon, color: '#313131', isLocal: true },
-    { name: 'miHoYo', icon: miHoYoIcon, color: '#FFB800', isLocal: true },
-    { name: 'Valorant', icon: 'simple-icons:riotgames', color: '#FF4654', isLocal: false },
-    { name: 'Telegram', icon: 'logos:telegram', color: '#0088CC', isLocal: false },
-    { name: 'Supercell', icon: supercellIcon, color: '#FFD700', isLocal: true },
-    { name: 'EA', icon: 'simple-icons:ea', color: '#FF6C37', isLocal: false },
-    { name: 'World of Tanks', icon: worldOfTanksIcon, color: '#CD853F', isLocal: true },
-    { name: 'World of Tanks Blitz', icon: worldOfTanksBlitzIcon, color: '#8FBC8F', isLocal: true },
-    { name: 'Epic Games', icon: epicGamesIcon, color: '#313131', isLocal: true },
-    { name: 'Gifts', icon: 'mdi:gift', color: '#FF69B4', isLocal: false },
-    { name: 'Minecraft', icon: 'vscode-icons:file-type-minecraft', color: '#62B47A', isLocal: false },
-    { name: 'Escape from Tarkov', icon: 'twemoji:crossed-swords', color: '#708090', isLocal: false },
-    { name: 'Social Club Rockstar', icon: 'simple-icons:rockstargames', color: '#F2B807', isLocal: false },
-    { name: 'Uplay', icon: 'simple-icons:ubisoft', color: '#0082FB', isLocal: false },
-    { name: 'War Thunder', icon: warThunderIcon, color: '#DC143C', isLocal: true },
-    { name: 'Discord', icon: 'logos:discord-icon', color: '#5865F2', isLocal: false },
-    { name: 'TikTok', icon: 'logos:tiktok-icon', color: '#FF0050', isLocal: false },
-    { name: 'Instagram', icon: instagramIcon, color: '#E4405F', isLocal: true },
-    { name: 'Battle.net', icon: battleNetIcon, color: '#00AEFF', isLocal: true },
-    { name: 'ChatGPT', icon: 'simple-icons:openai', color: '#412991', isLocal: false },
-    { name: 'VPN', icon: 'material-symbols:vpn-lock', color: '#00CED1', isLocal: false },
-    { name: 'Roblox', icon: 'simple-icons:roblox', color: '#E13838', isLocal: false }
-  ]
+  // Check if icon is local (SVG import) or external (iconify)
+  const isLocalIcon = (icon) => {
+    return typeof icon === 'string' && (
+      icon.includes('.svg') || 
+      icon === steamIcon || 
+      icon === fortniteIcon || 
+      icon === epicGamesIcon ||
+      icon === miHoYoIcon ||
+      icon === supercellIcon ||
+      icon === worldOfTanksIcon ||
+      icon === worldOfTanksBlitzIcon ||
+      icon === warThunderIcon ||
+      icon === instagramIcon ||
+      icon === battleNetIcon
+    )
+  }
+
+  // Get category color based on category name
+  const getCategoryColor = (categoryName) => {
+    const colorMap = {
+      'steam': '#1B2838',
+      'fortnite': '#313131',
+      'mihoyo': '#FFB800',
+      'riot': '#FF4654',
+      'telegram': '#0088CC',
+      'supercell': '#FFD700',
+      'ea': '#FF6C37',
+      'wot': '#CD853F',
+      'eg': '#313131',
+      'gifts': '#FF69B4',
+      'minecraft': '#62B47A',
+      'tarkov': '#708090',
+      'socialclub': '#F2B807',
+      'uplay': '#0082FB',
+      'wt': '#DC143C',
+      'discord': '#5865F2',
+      'tiktok': '#FF0050',
+      'instagram': '#E4405F',
+      'battlenet': '#00AEFF',
+      'chatgpt': '#412991',
+      'vpn': '#00CED1',
+      'roblox': '#E13838',
+      'wf': '#FF6600'
+    }
+    return colorMap[categoryName] || '#8B5CF6'
+  }
+
+  // Create categories array from LZT data with fallback to static categories
+  const categories = lztCategories.length > 0 
+    ? lztCategories
+        .filter(cat => cat.display_in_list === 1) // Only show categories that should be displayed
+        .map(cat => ({
+          name: cat.category_title,
+          categoryName: cat.category_name,
+          icon: getCategoryIcon(cat.category_name, cat.category_title),
+          color: getCategoryColor(cat.category_name),
+          isLocal: isLocalIcon(getCategoryIcon(cat.category_name, cat.category_title)),
+          categoryId: cat.category_id,
+          categoryUrl: cat.category_url
+        }))
+        .sort((a, b) => {
+          // Sort by category_order if available, otherwise alphabetically
+          const aOrder = lztCategories.find(c => c.category_name === a.categoryName)?.category_order || 999
+          const bOrder = lztCategories.find(c => c.category_name === b.categoryName)?.category_order || 999
+          return aOrder - bOrder
+        })
+    : [
+        // Fallback static categories if LZT API fails
+        { name: 'Steam', icon: steamIcon, color: '#1B2838', isLocal: true },
+        { name: 'Fortnite', icon: fortniteIcon, color: '#313131', isLocal: true },
+        { name: 'miHoYo', icon: miHoYoIcon, color: '#FFB800', isLocal: true },
+        { name: 'Valorant', icon: 'simple-icons:riotgames', color: '#FF4654', isLocal: false },
+        { name: 'Telegram', icon: 'logos:telegram', color: '#0088CC', isLocal: false },
+        { name: 'Supercell', icon: supercellIcon, color: '#FFD700', isLocal: true },
+        { name: 'EA', icon: 'simple-icons:ea', color: '#FF6C37', isLocal: false },
+        { name: 'World of Tanks', icon: worldOfTanksIcon, color: '#CD853F', isLocal: true },
+        { name: 'World of Tanks Blitz', icon: worldOfTanksBlitzIcon, color: '#8FBC8F', isLocal: true },
+        { name: 'Epic Games', icon: epicGamesIcon, color: '#313131', isLocal: true },
+        { name: 'Gifts', icon: 'mdi:gift', color: '#FF69B4', isLocal: false },
+        { name: 'Minecraft', icon: 'vscode-icons:file-type-minecraft', color: '#62B47A', isLocal: false },
+        { name: 'Escape from Tarkov', icon: 'twemoji:crossed-swords', color: '#708090', isLocal: false },
+        { name: 'Social Club Rockstar', icon: 'simple-icons:rockstargames', color: '#F2B807', isLocal: false },
+        { name: 'Uplay', icon: 'simple-icons:ubisoft', color: '#0082FB', isLocal: false },
+        { name: 'War Thunder', icon: warThunderIcon, color: '#DC143C', isLocal: true },
+        { name: 'Discord', icon: 'logos:discord-icon', color: '#5865F2', isLocal: false },
+        { name: 'TikTok', icon: 'logos:tiktok-icon', color: '#FF0050', isLocal: false },
+        { name: 'Instagram', icon: instagramIcon, color: '#E4405F', isLocal: true },
+        { name: 'Battle.net', icon: battleNetIcon, color: '#00AEFF', isLocal: true },
+        { name: 'ChatGPT', icon: 'simple-icons:openai', color: '#412991', isLocal: false },
+        { name: 'VPN', icon: 'material-symbols:vpn-lock', color: '#00CED1', isLocal: false },
+        { name: 'Roblox', icon: 'simple-icons:roblox', color: '#E13838', isLocal: false }
+      ]
 
   // Show Steam page if enabled
   if (showSteamPage) {
@@ -150,7 +218,7 @@ function MainPage() {
             {categories.map((category) => {
               return (
                 <button
-                  key={category.name}
+                  key={category.categoryName || category.name}
                   onClick={() => changeCategory(category.name)}
                   className={`relative group flex items-center justify-center p-4 rounded-lg transition-all duration-300 hover:scale-105 ${
                     selectedCategory === category.name
@@ -163,13 +231,12 @@ function MainPage() {
                       src={category.icon} 
                       alt={category.name}
                       className="w-8 h-8" 
-                      style={{ filter: selectedCategory === category.name ? 'hue-rotate(270deg) saturate(1.5)' : 'none' }}
                     />
                   ) : (
                     <Icon 
                       icon={category.icon} 
                       className="text-3xl" 
-                      style={{ color: selectedCategory === category.name ? '#a855f7' : category.color }}
+                      style={{ color: category.color }}
                     />
                   )}
                   

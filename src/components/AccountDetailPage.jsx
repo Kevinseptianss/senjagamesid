@@ -16,8 +16,15 @@ const AccountDetailPage = () => {
   const api = new ZelenkaAPI()
 
   useEffect(() => {
+    console.log('AccountDetailPage mounted')
+    console.log('searchParams:', searchParams.toString())
+    console.log('accountId from params:', accountId)
+    
     if (accountId) {
       fetchAccountDetails(accountId)
+    } else {
+      setError('No account ID provided in URL')
+      setLoading(false)
     }
   }, [accountId])
 
@@ -26,9 +33,53 @@ const AccountDetailPage = () => {
       setLoading(true)
       setError(null)
       
-      // Fetch account details from API
-      const response = await api.getSteamAccountById(id)
-      setAccount(response)
+      console.log('Fetching account details for ID:', id)
+      
+      // Try multiple endpoints to find the account details
+      let response = null
+      let accountData = null
+      
+      // Try the general endpoint first
+      try {
+        console.log('Trying general endpoint: /${id}')
+        response = await api.getAccountDetails(id)
+        console.log('General API Response:', response)
+        
+        if (response && (response.item || response.data || response.id)) {
+          accountData = response.item || response.data || response
+        }
+      } catch (generalError) {
+        console.log('General endpoint failed:', generalError.message)
+      }
+      
+      // If general endpoint didn't work, try Steam-specific endpoint
+      if (!accountData) {
+        try {
+          console.log('Trying Steam endpoint: /steam/${id}')
+          response = await api.getSteamAccountById(id)
+          console.log('Steam API Response:', response)
+          
+          if (response && (response.item || response.data || response.id)) {
+            accountData = response.item || response.data || response
+          }
+        } catch (steamError) {
+          console.log('Steam endpoint failed:', steamError.message)
+        }
+      }
+      
+      // If we still don't have data, try to use the response directly
+      if (!accountData && response) {
+        console.log('Using response directly:', response)
+        accountData = response
+      }
+      
+      if (accountData && (accountData.id || accountData.item_id)) {
+        console.log('Setting account data:', accountData)
+        setAccount(accountData)
+      } else {
+        console.log('No valid account data found in any endpoint')
+        setError('Account not found - please try a different account or check if the ID is correct')
+      }
     } catch (err) {
       console.error('Error fetching account details:', err)
       setError(err.message || 'Failed to load account details')

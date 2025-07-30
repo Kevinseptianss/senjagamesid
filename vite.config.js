@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    historyApiFallback: true, // Enable client-side routing
     proxy: {
       '/api': {
         target: 'https://prod-api.lzt.market',
