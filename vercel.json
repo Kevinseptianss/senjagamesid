@@ -8,6 +8,10 @@
     {
       "source": "/api/lzt-proxy/(.*)",
       "destination": "/api/lzt-proxy?path=$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
