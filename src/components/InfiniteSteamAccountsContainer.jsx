@@ -119,7 +119,7 @@ const InfiniteSteamAccountsContainer = ({ filters = {} }) => {
   return (
     <div className="space-y-6">
       {/* Accounts Grid */}
-      <div ref={accountsContainerRef} className="account-container grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div ref={accountsContainerRef} className="account-container grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 w-full overflow-hidden">
         {accounts.map((account, index) => (
           <SteamAccountCard 
             key={`${account.item_id || account.id}-${index}`} 

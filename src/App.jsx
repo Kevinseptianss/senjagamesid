@@ -195,7 +195,7 @@ function MainPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-black via-gray-900 to-black">
+    <div className="min-h-screen bg-gradient-to-r from-black via-gray-900 to-black overflow-x-hidden w-full">
       {/* Header */}
       <header className="shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -259,7 +259,7 @@ function MainPage() {
       </section>
 
       {/* Accounts Grid */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full overflow-x-hidden">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-3xl font-bold text-purple-400">
             {selectedCategory} Accounts
