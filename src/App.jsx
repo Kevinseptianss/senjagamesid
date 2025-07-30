@@ -5,6 +5,7 @@ import { useZelenkaAccounts } from './hooks/useZelenkaAccounts'
 import SteamPage from './components/SteamPage'
 import SteamFilters from './components/SteamFilters'
 import SteamAccountsContainer from './components/SteamAccountsContainer'
+import InfiniteSteamAccountsContainer from './components/InfiniteSteamAccountsContainer'
 import AccountDetailPage from './components/AccountDetailPage'
 import ZelenkaAPI from './services/zelenkaAPI'
 
@@ -26,6 +27,7 @@ import miHoYoIcon from './assets/68258c779c36b-miHoYo.svg'
 function MainPage() {
   const [showSteamPage, setShowSteamPage] = useState(false)
   const [lztCategories, setLztCategories] = useState([])
+  const [steamFilters, setSteamFilters] = useState({}) // State for Steam filters
   const { 
     accounts: filteredAccounts, 
     loading, 
@@ -150,6 +152,10 @@ function MainPage() {
           categoryId: cat.category_id,
           categoryUrl: cat.category_url
         }))
+        // Remove duplicates based on categoryName
+        .filter((category, index, self) => 
+          index === self.findIndex(c => c.categoryName === category.categoryName)
+        )
         .sort((a, b) => {
           // Sort by category_order if available, otherwise alphabetically
           const aOrder = lztCategories.find(c => c.category_name === a.categoryName)?.category_order || 999
@@ -215,10 +221,10 @@ function MainPage() {
       <section className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-4">
-            {categories.map((category) => {
+            {categories.map((category, index) => {
               return (
                 <button
-                  key={category.categoryName || category.name}
+                  key={`${category.categoryName || category.name}-${index}`}
                   onClick={() => changeCategory(category.name)}
                   className={`relative group flex items-center justify-center p-4 rounded-lg transition-all duration-300 hover:scale-105 ${
                     selectedCategory === category.name
@@ -258,31 +264,34 @@ function MainPage() {
           <h3 className="text-3xl font-bold text-purple-400">
             {selectedCategory} Accounts
           </h3>
-          <div className="flex items-center space-x-4">
-            <p className="text-gray-400">{filteredAccounts.length} accounts found</p>
-            <button 
-              onClick={refreshAccounts}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-              disabled={loading}
-            >
-              {loading ? 'Loading...' : 'Refresh'}
-            </button>
-          </div>
+          {/* Only show account count and refresh for non-Steam categories */}
+          {selectedCategory !== 'Steam' && (
+            <div className="flex items-center space-x-4">
+              <p className="text-gray-400">{filteredAccounts.length} accounts found</p>
+              <button 
+                onClick={refreshAccounts}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                disabled={loading}
+              >
+                {loading ? 'Loading...' : 'Refresh'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Steam Filters - Show only when Steam category is selected */}
         {selectedCategory === 'Steam' && (
           <SteamFilters 
             onFilterChange={(filters) => {
-              // Apply the filters to the Steam API call
-              updateSteamFilters(filters);
+              // Update local state for infinite scroll component
+              setSteamFilters(filters);
             }} 
             loading={loading} 
           />
         )}
 
-        {/* Error State */}
-        {error && (
+        {/* Error State - Only for non-Steam categories */}
+        {selectedCategory !== 'Steam' && error && (
           <div className="bg-red-900 border border-red-700 text-red-100 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">Error loading accounts:</p>
             <p className="text-sm mt-1">{error}</p>
@@ -295,8 +304,8 @@ function MainPage() {
           </div>
         )}
 
-        {/* Loading State */}
-        {loading && (
+        {/* Loading State - Only for non-Steam categories */}
+        {selectedCategory !== 'Steam' && loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, index) => (
               <div key={index} className="bg-gray-900 rounded-lg shadow-lg border border-gray-700 p-6 animate-pulse">
@@ -316,14 +325,12 @@ function MainPage() {
         )}
 
         {/* Accounts Display */}
-        {!loading && !error && (
-          selectedCategory === 'Steam' ? (
-            <SteamAccountsContainer 
-              accounts={filteredAccounts} 
-              loading={loading} 
-              error={error} 
-            />
-          ) : (
+        {selectedCategory === 'Steam' ? (
+          <InfiniteSteamAccountsContainer 
+            filters={steamFilters}
+          />
+        ) : (
+          !loading && !error && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredAccounts.map((account) => (
                 <div key={account.id} className="bg-gray-900 rounded-lg shadow-lg border border-gray-700 hover:border-purple-500 transition-all duration-300 p-6">
@@ -486,8 +493,8 @@ function MainPage() {
           )
         )}
 
-        {/* Empty State */}
-        {!loading && !error && filteredAccounts.length === 0 && (
+        {/* Empty State - Show only for non-Steam categories */}
+        {selectedCategory !== 'Steam' && !loading && !error && filteredAccounts.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-400 text-lg">No accounts found for {selectedCategory}</p>
             <button 
