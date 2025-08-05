@@ -227,16 +227,7 @@ const AccountDetailPage = () => {
               {/* Account Header */}
               <div className="p-6 border-b border-gray-700">
                 <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">
-                      {account.title || `Steam Account #${account.id}`}
-                    </h2>
-                    <p className="text-gray-400">{account.title_en}</p>
-                  </div>
                   <div className="text-right">
-                    <div className="text-3xl font-bold text-purple-400 mb-1">
-                      {formatPrice(account)}
-                    </div>
                     <div className="flex items-center space-x-2">
                       {account.hasWarranty && (
                         <span className="bg-green-600 text-white text-xs px-2 py-1 rounded">
@@ -292,7 +283,7 @@ const AccountDetailPage = () => {
               {/* Tabs */}
               <div className="border-b border-gray-700">
                 <nav className="flex space-x-8 px-6">
-                  {['overview', 'games', 'seller', 'security'].map((tab) => (
+                  {['overview', 'seller', 'security'].map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
@@ -355,13 +346,10 @@ const AccountDetailPage = () => {
                         )}
                       </div>
                     )}
-                  </div>
-                )}
 
-                {activeTab === 'games' && (
-                  <div className="space-y-4">
-                    {account.steam_full_games?.list && Object.keys(account.steam_full_games.list).length > 0 ? (
-                      <>
+                    {/* Games Library Section */}
+                    {account.steam_full_games?.list && Object.keys(account.steam_full_games.list).length > 0 && (
+                      <div className="space-y-4">
                         <div className="flex justify-between items-center">
                           <h3 className="text-lg font-semibold text-white">
                             Games Library ({account.steam_full_games.total})
@@ -392,11 +380,6 @@ const AccountDetailPage = () => {
                               </div>
                             ))}
                         </div>
-                      </>
-                    ) : (
-                      <div className="text-center text-gray-400 py-8">
-                        <Icon icon="mdi:gamepad-variant" className="text-4xl mb-4 mx-auto" />
-                        <p>No games information available</p>
                       </div>
                     )}
                   </div>
@@ -534,14 +517,8 @@ const AccountDetailPage = () => {
             <div className="bg-gray-900 rounded-lg border border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Need Help?</h3>
               <div className="space-y-3">
-                <button className="w-full bg-gray-800 text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors border border-gray-600">
-                  Contact Seller
-                </button>
-                <button className="w-full bg-gray-800 text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors border border-gray-600">
-                  Report Account
-                </button>
-                <button className="w-full bg-gray-800 text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors border border-gray-600">
-                  Support Center
+                <button className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium">
+                  Contact Senja Games
                 </button>
               </div>
             </div>

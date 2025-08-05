@@ -17,10 +17,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
     // Games selection
     game: [],
     
-    // Account origin
-    origin: [],
-    not_origin: [],
-    
     // Warranty
     eg: '',
     
@@ -31,10 +27,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
     games_purchase_max: '',
     ingame_purchase_min: '',
     ingame_purchase_max: '',
-    cards_min: '',
-    cards_max: '',
-    cards_games_min: '',
-    cards_games_max: '',
     
     // Transaction filters
     trans: false,
@@ -49,8 +41,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
     mafile: '',
     limit: '',
     trade_limit: '',
-    recently_hours_min: '',
-    recently_hours_max: '',
     
     // Inventory
     inv_game: '',
@@ -66,12 +56,8 @@ const SteamFilters = ({ onFilterChange, loading }) => {
     balance_max: '',
     lmin: '',
     lmax: '',
-    friends_min: '',
-    friends_max: '',
     points_min: '',
     points_max: '',
-    gmin: '',
-    gmax: '',
     no_vac: false,
     email_type: [],
     
@@ -157,17 +143,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
     { value: '268500', label: 'XCOM 2' },
     { value: '377160', label: 'Fallout 4' },
     { value: '105600', label: 'Terraria' }
-  ]
-
-  // Account origins
-  const accountOrigins = [
-    { value: 'brute', label: 'Brute' },
-    { value: 'phishing', label: 'Phishing' },
-    { value: 'stealer', label: 'Stealer' },
-    { value: 'personal', label: 'Personal' },
-    { value: 'resale', label: 'Resale' },
-    { value: 'autoreg', label: 'Autoreg' },
-    { value: 'dummy', label: 'Dummy' }
   ]
 
   // Warranty options
@@ -256,8 +231,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
       // Steam-specific parameters (these need to match the actual API parameter names)
       // Convert game array to indexed format for API
       ...(filters.game && filters.game.length > 0 && { game: filters.game }),
-      ...(filters.origin && filters.origin.length > 0 && { origin: filters.origin }),
-      ...(filters.not_origin && filters.not_origin.length > 0 && { not_origin: filters.not_origin }),
       ...(filters.country && filters.country.length > 0 && { country: filters.country }),
       ...(filters.not_country && filters.not_country.length > 0 && { not_country: filters.not_country }),
       
@@ -337,8 +310,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
       title: '',
       order_by: 'pdate_to_up_upload',
       game: [],
-      origin: [],
-      not_origin: [],
       eg: '',
       purchase_min: '',
       purchase_max: '',
@@ -346,10 +317,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
       games_purchase_max: '',
       ingame_purchase_min: '',
       ingame_purchase_max: '',
-      cards_min: '',
-      cards_max: '',
-      cards_games_min: '',
-      cards_games_max: '',
       trans: false,
       no_trans: false,
       country: [],
@@ -471,7 +438,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
             <div className="filterColumn space-y-4">
               {/* Games Selection */}
               <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Select Games (without VAC) - Multiple Selection</label>
+                <label className="text-gray-300 text-sm font-medium">Pilih Game yang ada di Dalam Akun</label>
                 <div className="bg-gray-800 border border-gray-600 rounded-lg p-2 max-h-32 overflow-y-auto">
                   {gamesList.slice(0, 10).map(game => (
                     <label key={game.value} className="flex items-center space-x-2 py-1 hover:bg-gray-700 px-2 rounded cursor-pointer">
@@ -512,40 +479,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                     })}
                   </div>
                 )}
-              </div>
-
-              {/* Account Origin */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Account Origin</label>
-                <select
-                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  value={filters.origin[0] || ''}
-                  onChange={(e) => handleFilterChange('origin', e.target.value ? [e.target.value] : [])}
-                >
-                  <option value="">Select origin</option>
-                  {accountOrigins.map(origin => (
-                    <option key={origin.value} value={origin.value} className="py-1">
-                      {origin.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Exclude Account Origin */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Exclude Account Origin</label>
-                <select
-                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  value={filters.not_origin[0] || ''}
-                  onChange={(e) => handleFilterChange('not_origin', e.target.value ? [e.target.value] : [])}
-                >
-                  <option value="">Select origin to exclude</option>
-                  {accountOrigins.map(origin => (
-                    <option key={origin.value} value={origin.value} className="py-1">
-                      {origin.label}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {/* Warranty Duration */}
@@ -633,49 +566,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                   </div>
                 </div>
 
-                <div className="splitFilter">
-                  <label className="text-gray-300 text-xs font-medium">Available to obtain cards</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="From"
-                      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={filters.cards_min}
-                      onChange={(e) => handleFilterChange('cards_min', e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="up to"
-                      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={filters.cards_max}
-                      onChange={(e) => handleFilterChange('cards_max', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="splitFilter">
-                  <label className="text-gray-300 text-xs font-medium">Games with available cards</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="From"
-                      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={filters.cards_games_min}
-                      onChange={(e) => handleFilterChange('cards_games_min', e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="up to"
-                      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={filters.cards_games_max}
-                      onChange={(e) => handleFilterChange('cards_games_max', e.target.value)}
-                    />
-                  </div>
-                </div>
               </div>
 
               {/* Transaction Checkboxes */}
@@ -860,29 +750,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                 </div>
               </div>
 
-              {/* Hours played in last 2 weeks */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-xs font-medium">Hours played in last 2 weeks</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="From"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.recently_hours_min}
-                    onChange={(e) => handleFilterChange('recently_hours_min', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="up to"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.recently_hours_max}
-                    onChange={(e) => handleFilterChange('recently_hours_max', e.target.value)}
-                  />
-                </div>
-              </div>
-
               {/* Inventory Section */}
               <div className="space-y-3">
                 <div className="space-y-2">
@@ -996,29 +863,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                 </div>
               </div>
 
-              {/* Friends */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Friends</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="Friends from"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.friends_min}
-                    onChange={(e) => handleFilterChange('friends_min', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="up to"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.friends_max}
-                    onChange={(e) => handleFilterChange('friends_max', e.target.value)}
-                  />
-                </div>
-              </div>
-
               {/* Points */}
               <div className="space-y-2">
                 <label className="text-gray-300 text-sm font-medium">Points</label>
@@ -1038,29 +882,6 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                     className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     value={filters.points_max}
                     onChange={(e) => handleFilterChange('points_max', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Games */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Games</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="Games from"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.gmin}
-                    onChange={(e) => handleFilterChange('gmin', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="up to"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.gmax}
-                    onChange={(e) => handleFilterChange('gmax', e.target.value)}
                   />
                 </div>
               </div>

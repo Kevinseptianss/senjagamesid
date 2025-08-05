@@ -218,9 +218,9 @@ function MainPage() {
       </header>
 
       {/* Categories */}
-      <section className="py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-4">
+      <section className="py-8 relative" style={{ overflow: 'visible' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{ overflow: 'visible' }}>
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-4" style={{ overflow: 'visible' }}>
             {categories.map((category, index) => {
               return (
                 <button
@@ -231,6 +231,7 @@ function MainPage() {
                       ? 'bg-gray-800 border border-purple-500'
                       : 'bg-gray-900 border border-gray-700 hover:border-purple-400'
                   }`}
+                  style={{ position: 'relative', zIndex: 1 }}
                 >
                   {category.isLocal ? (
                     <img 
@@ -247,9 +248,21 @@ function MainPage() {
                   )}
                   
                   {/* Styled Tooltip */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-purple-300 text-xs font-medium rounded-lg border border-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap z-10">
+                  <div 
+                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-3 py-2 bg-gray-800 text-purple-300 text-xs font-medium rounded-lg border border-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-300 pointer-events-none whitespace-nowrap shadow-xl"
+                    style={{ 
+                      zIndex: 9999,
+                      minWidth: 'max-content',
+                      position: 'absolute',
+                      top: 'auto',
+                      bottom: '100%'
+                    }}
+                  >
                     {category.name}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                    <div 
+                      className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"
+                      style={{ zIndex: 9999 }}
+                    ></div>
                   </div>
                 </button>
               )
