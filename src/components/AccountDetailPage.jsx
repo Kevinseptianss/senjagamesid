@@ -1,19 +1,45 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { Icon } from '@iconify/react'
+import { useCart } from '../context/CartContext'
 import ZelenkaAPI from '../services/zelenkaAPI'
+import PaymentModal from './PaymentModal'
+import CartModal from './CartModal'
+import { getPriceValue, convertToIDR, formatCurrency } from '../utils/currency'
 
 const AccountDetailPage = () => {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { addToCart, totalItems } = useCart()
   const accountId = searchParams.get('id')
   
   const [account, setAccount] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('overview')
+  const [paymentModal, setPaymentModal] = useState({ isOpen: false, item: null })
+  const [toast, setToast] = useState({ show: false, message: '', type: '' })
+  const [cartModal, setCartModal] = useState(false)
 
   const api = new ZelenkaAPI()
+
+  // Show toast notification
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type })
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: '' })
+    }, 3000)
+  }
+
+  // Handle add to cart with feedback
+  const handleAddToCart = () => {
+    const success = addToCart(account)
+    if (success) {
+      showToast('Account added to cart!', 'success')
+    } else {
+      showToast('Account is already in your cart', 'warning')
+    }
+  }
 
   useEffect(() => {
     console.log('AccountDetailPage mounted')
@@ -90,7 +116,11 @@ const AccountDetailPage = () => {
 
   // Format price
   const formatPrice = (account) => {
-    return account?.priceWithSellerFeeLabel || `$${account?.price || 0}`
+    if (!account) return 'N/A';
+    
+    const priceUSD = getPriceValue(account);
+    const priceIDR = convertToIDR(priceUSD);
+    return formatCurrency(priceIDR);
   }
 
   // Format date
@@ -201,18 +231,46 @@ const AccountDetailPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-r from-black via-gray-900 to-black">
       {/* Header */}
-      <header className="shadow-lg border-b border-gray-700">
+      <header className="bg-gray-900/80 backdrop-blur-md border-b border-gray-800 shadow-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <button 
-              onClick={() => navigate('/')}
-              className="flex items-center text-purple-400 hover:text-purple-300"
-            >
-              <Icon icon="mdi:arrow-left" className="mr-2" />
-              Back to Marketplace
-            </button>
-            <h1 className="text-xl font-bold text-white">Account Details</h1>
-            <div className="w-32"></div> {/* Spacer for center alignment */}
+            <div className="flex items-center space-x-4">
+              <button 
+                onClick={() => navigate('/')}
+                className="flex items-center text-gray-300 hover:text-purple-400 transition-colors"
+              >
+                <Icon icon="mdi:arrow-left" className="mr-2 text-xl" />
+                <span className="hidden sm:inline">Back to Marketplace</span>
+                <span className="sm:hidden">Back</span>
+              </button>
+              <div className="h-6 w-px bg-gray-700"></div>
+              <Link 
+                to="/" 
+                className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent hover:from-purple-300 hover:to-pink-300 transition-all duration-200"
+              >
+                SenjaGames.id
+              </Link>
+            </div>
+            
+            {/* Cart Icon */}
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setCartModal(true)}
+                className="relative bg-gradient-to-r from-gray-700 to-gray-800 text-white p-2 sm:px-3 sm:py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg"
+              >
+                <Icon icon="mdi:shopping-cart" className="text-lg sm:text-xl" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 font-bold animate-pulse">
+                    {totalItems > 99 ? '99+' : totalItems}
+                  </span>
+                )}
+              </button>
+              
+              <h1 className="text-lg font-bold text-white hidden sm:block">Account Details</h1>
+              <div className="text-sm text-gray-400">
+                ID: {accountId}
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -467,8 +525,11 @@ const AccountDetailPage = () => {
             {/* Purchase Card */}
             <div className="bg-gray-900 rounded-lg border border-gray-700 p-6">
               <div className="text-center mb-4">
-                <div className="text-3xl font-bold text-purple-400 mb-2">
+                <div className="text-3xl font-bold text-purple-400 mb-1">
                   {formatPrice(account)}
+                </div>
+                <div className="text-sm text-gray-400 mb-2">
+                  ${getPriceValue(account)} USD
                 </div>
                 {account.hasWarranty && (
                   <p className="text-green-400 text-sm">
@@ -477,11 +538,19 @@ const AccountDetailPage = () => {
                 )}
               </div>
               
-              <button className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium mb-3">
+              <button 
+                onClick={() => setPaymentModal({ isOpen: true, item: account })}
+                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 px-4 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-medium mb-3 shadow-lg hover:shadow-purple-500/25"
+              >
+                <Icon icon="mdi:credit-card" className="inline mr-2" />
                 Buy Now
               </button>
               
-              <button className="w-full bg-gray-800 text-gray-300 py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors border border-gray-600">
+              <button 
+                onClick={handleAddToCart}
+                className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-2 px-4 rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 border border-green-500/30 font-medium shadow-lg hover:shadow-green-500/25"
+              >
+                <Icon icon="mdi:cart-plus" className="inline mr-2" />
                 Add to Cart
               </button>
             </div>
@@ -525,6 +594,47 @@ const AccountDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={paymentModal.isOpen}
+        onClose={() => setPaymentModal({ isOpen: false, item: null })}
+        item={paymentModal.item}
+        quantity={1}
+      />
+
+      {/* Cart Modal */}
+      <CartModal
+        isOpen={cartModal}
+        onClose={() => setCartModal(false)}
+      />
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className="fixed top-4 right-4 z-50 max-w-sm">
+          <div className={`p-4 rounded-lg shadow-lg border backdrop-blur-md transition-all duration-300 ${
+            toast.type === 'success' 
+              ? 'bg-green-900/90 border-green-500/50 text-green-100' 
+              : toast.type === 'warning'
+              ? 'bg-yellow-900/90 border-yellow-500/50 text-yellow-100'
+              : 'bg-red-900/90 border-red-500/50 text-red-100'
+          }`}>
+            <div className="flex items-center space-x-3">
+              <Icon 
+                icon={toast.type === 'success' ? 'mdi:check-circle' : toast.type === 'warning' ? 'mdi:alert-circle' : 'mdi:close-circle'} 
+                className="text-xl flex-shrink-0" 
+              />
+              <span className="font-medium">{toast.message}</span>
+              <button 
+                onClick={() => setToast({ show: false, message: '', type: '' })}
+                className="text-current hover:opacity-75 transition-opacity"
+              >
+                <Icon icon="mdi:close" className="text-lg" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

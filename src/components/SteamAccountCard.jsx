@@ -1,8 +1,11 @@
 import { Icon } from '@iconify/react'
+import { getPriceValue, convertToIDR, formatCurrency } from '../utils/currency'
 
 const SteamAccountCard = ({ account }) => {
-  // Format price
-  const price = account.priceWithSellerFeeLabel || `$${account.price || 0}`
+  // Get formatted price in IDR
+  const priceUSD = getPriceValue(account);
+  const priceIDR = convertToIDR(priceUSD);
+  const formattedPrice = formatCurrency(priceIDR);
   
   // Get warranty info
   const getWarrantyInfo = () => {
@@ -121,7 +124,7 @@ const SteamAccountCard = ({ account }) => {
     <a 
       href={`/acc/?id=${account.item_id || account.id}`} 
       target="_blank" 
-      className="account bg-gray-900 border border-gray-700 hover:border-purple-500 transition-all duration-300 rounded-xl overflow-hidden relative block shadow-lg hover:shadow-xl flex flex-col min-h-[400px]"
+      className="account bg-gray-900 border border-gray-700 hover:border-purple-500 transition-all duration-300 rounded-xl overflow-hidden relative shadow-lg hover:shadow-xl flex flex-col min-h-[400px]"
     >
       {/* Header with Price */}
       <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-4 py-3 flex justify-between items-center border-b border-gray-700">
@@ -130,7 +133,10 @@ const SteamAccountCard = ({ account }) => {
           <span className="text-sm text-gray-300 font-medium">Steam Account</span>
         </div>
         <div className="price-badge">
-          <span className="text-xl font-bold text-purple-400">{price}</span>
+          <div className="text-right">
+            <div className="text-xl font-bold text-purple-400">{formattedPrice}</div>
+            <div className="text-xs text-gray-400 mt-0.5">${priceUSD}</div>
+          </div>
         </div>
       </div>
 

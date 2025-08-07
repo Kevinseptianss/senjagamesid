@@ -14,6 +14,15 @@ export default defineConfig({
         headers: {
           'User-Agent': 'SenjaGames.id/1.0'
         }
+      },
+      '/winpay-api': {
+        target: 'https://api.winpay.id',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/winpay-api/, ''),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
       }
     }
   }

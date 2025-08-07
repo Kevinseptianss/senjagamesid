@@ -36,14 +36,17 @@ export const useInfiniteSteamAccounts = (filters = {}) => {
       }
     };
 
+    // Use the original price from API as-is (no conversion needed)
+    const originalPrice = typeof apiAccount.price === 'number' ? apiAccount.price : parseFloat(apiAccount.price) || 0;
+    
     return {
       id: apiAccount.item_id || apiAccount.id,
       item_id: apiAccount.item_id,
       title: apiAccount.title || `Steam Account #${apiAccount.item_id}`,
-      price: apiAccount.price || 0,
+      price: originalPrice,
       priceWithSellerFeeLabel: apiAccount.price_currency ? 
-        `${(apiAccount.price_currency.toLowerCase() === 'usd') ? '$' : apiAccount.price_currency}${apiAccount.price}` : 
-        `$${apiAccount.price}`,
+        `${(apiAccount.price_currency.toLowerCase() === 'usd') ? '$' : apiAccount.price_currency}${originalPrice}` : 
+        `$${originalPrice}`,
       currency: (apiAccount.price_currency?.toLowerCase() === 'usd') ? '$' : (apiAccount.price_currency || '$'),
       
       // Account status and activity

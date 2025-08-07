@@ -76,7 +76,7 @@ export const useZelenkaAccounts = () => {
     const baseAccount = {
       id: accountData.item_id || accountData.id || Math.random().toString(36),
       item_id: accountData.item_id || accountData.id,
-      price: accountData.price || 0,
+      price: typeof accountData.price === 'number' ? accountData.price : parseFloat(accountData.price) || 0,
       priceWithSellerFeeLabel: accountData.priceWithSellerFeeLabel || `$${accountData.price || '0.00'}`,
       type: selectedCategory,
       title: accountData.title || accountData.title_en || getAccountStatus(steamData.status || steamData.account_status) || 'Account',

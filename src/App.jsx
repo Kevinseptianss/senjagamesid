@@ -1,13 +1,24 @@
 import { useState, useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Link } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import { useZelenkaAccounts } from './hooks/useZelenkaAccounts'
+import { useAuth } from './context/AuthContext'
+import { useCart } from './context/CartContext'
 import SteamPage from './components/SteamPage'
 import SteamFilters from './components/SteamFilters'
 import SteamAccountsContainer from './components/SteamAccountsContainer'
 import InfiniteSteamAccountsContainer from './components/InfiniteSteamAccountsContainer'
 import AccountDetailPage from './components/AccountDetailPage'
+import Login from './components/Login'
+import Signup from './components/Signup'
+import Dashboard from './components/Dashboard'
+import ProtectedRoute from './components/ProtectedRoute'
+import CartModal from './components/CartModal'
+import PaymentModal from './components/PaymentModal'
 import ZelenkaAPI from './services/zelenkaAPI'
+import DebugFirestore from './components/DebugFirestore'
+
+import { CartProvider } from './context/CartContext'
 
 // Create API instance
 const zelenkaAPI = new ZelenkaAPI()
@@ -28,6 +39,11 @@ function MainPage() {
   const [showSteamPage, setShowSteamPage] = useState(false)
   const [lztCategories, setLztCategories] = useState([])
   const [steamFilters, setSteamFilters] = useState({}) // State for Steam filters
+  const [cartModalOpen, setCartModalOpen] = useState(false)
+  const [paymentModal, setPaymentModal] = useState({ isOpen: false, item: null })
+  const [nameUpdate, setNameUpdate] = useState({ show: false, value: '' })
+  const { user, signOut, updateUserProfile } = useAuth()
+  const { totalItems, addToCart } = useCart()
   const { 
     accounts: filteredAccounts, 
     loading, 
@@ -52,6 +68,19 @@ function MainPage() {
     }
     loadLZTCategories()
   }, [])
+
+  // Handle name update
+  const handleNameUpdate = async () => {
+    if (!nameUpdate.value.trim()) return;
+    
+    try {
+      await updateUserProfile(nameUpdate.value.trim());
+      setNameUpdate({ show: false, value: '' });
+    } catch (error) {
+      console.error('Error updating name:', error);
+      alert('Gagal mengupdate nama. Silakan coba lagi.');
+    }
+  };
 
   // Map LZT category names to icons (with fallbacks to your existing icons)
   const getCategoryIcon = (categoryName, categoryTitle) => {
@@ -197,25 +226,130 @@ function MainPage() {
   return (
     <div className="min-h-screen bg-gradient-to-r from-black via-gray-900 to-black overflow-x-hidden w-full">
       {/* Header */}
-      <header className="shadow-lg">
+      <header className="bg-gray-900/80 backdrop-blur-md border-b border-gray-800 shadow-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
+            {/* Logo */}
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-purple-400">
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                 SenjaGames.id
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
-                Login
-              </button>
-              <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
-                Register
-              </button>
+
+            {/* Navigation */}
+            <div className="flex items-center">
+              {user ? (
+                <div className="flex items-center space-x-2 sm:space-x-4">
+                  {/* Welcome message - hidden on mobile */}
+                  <div className="hidden lg:block">
+                    {!user.fullName && !nameUpdate.show ? (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-gray-300 text-sm">
+                          Selamat datang, <span className="text-purple-400 font-medium">{user.email.split('@')[0]}</span>
+                        </span>
+                        <button
+                          onClick={() => setNameUpdate({ show: true, value: '' })}
+                          className="text-xs bg-purple-600 text-white px-2 py-1 rounded hover:bg-purple-700 transition-colors"
+                        >
+                          Set Nama
+                        </button>
+                      </div>
+                    ) : nameUpdate.show ? (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-gray-300 text-sm">Nama:</span>
+                        <input
+                          type="text"
+                          value={nameUpdate.value}
+                          onChange={(e) => setNameUpdate(prev => ({ ...prev, value: e.target.value }))}
+                          className="bg-gray-800 text-white text-sm px-2 py-1 rounded border border-gray-600 focus:border-purple-500 outline-none"
+                          placeholder="Masukkan nama lengkap"
+                          onKeyPress={(e) => e.key === 'Enter' && handleNameUpdate()}
+                        />
+                        <button
+                          onClick={handleNameUpdate}
+                          className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={() => setNameUpdate({ show: false, value: '' })}
+                          className="text-xs bg-gray-600 text-white px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-gray-300 text-sm">
+                        Selamat datang, <span className="text-purple-400 font-medium">{user.fullName}</span>
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* User avatar for mobile */}
+                  <div className="lg:hidden flex items-center justify-center w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full">
+                    <span className="text-white text-sm font-bold">
+                      {(user.fullName || user.email).charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* Cart Icon */}
+                  <button
+                    onClick={() => setCartModalOpen(true)}
+                    className="relative bg-gradient-to-r from-gray-700 to-gray-800 text-white p-2 sm:px-3 sm:py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 shadow-lg"
+                  >
+                    <Icon icon="mdi:shopping-cart" className="text-lg sm:text-xl" />
+                    {totalItems > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1 font-bold animate-pulse">
+                        {totalItems > 99 ? '99+' : totalItems}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Action buttons */}
+                  <Link
+                    to="/dashboard"
+                    className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-purple-500/25"
+                  >
+                    <span className="hidden sm:inline">Dashboard</span>
+                    <Icon icon="mdi:view-dashboard" className="sm:hidden text-lg" />
+                  </Link>
+                  <button
+                    onClick={() => signOut()}
+                    className="bg-gradient-to-r from-red-600 to-red-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-red-500/25"
+                  >
+                    <span className="hidden sm:inline">Keluar</span>
+                    <Icon icon="mdi:logout" className="sm:hidden text-lg" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2 sm:space-x-4">
+                  <Link
+                    to="/login"
+                    className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-purple-500/25"
+                  >
+                    <span className="hidden sm:inline">Masuk</span>
+                    <Icon icon="mdi:login" className="sm:hidden text-lg" />
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="bg-gradient-to-r from-pink-600 to-purple-600 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg hover:from-pink-700 hover:to-purple-700 transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-pink-500/25"
+                  >
+                    <span className="hidden sm:inline">Daftar</span>
+                    <Icon icon="mdi:account-plus" className="sm:hidden text-lg" />
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </header>
+
+      {/* Debug Firestore (temporary) */}
+      {user && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <DebugFirestore />
+        </div>
+      )}
 
       {/* Categories */}
       <section className="py-8 relative" style={{ overflow: 'visible' }}>
@@ -494,12 +628,35 @@ function MainPage() {
                     </div>
                   )}
 
-                  <a 
-                    href={`/acc/?id=${account.id}`}
-                    className="block w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors font-medium text-center"
-                  >
-                    View Details
-                  </a>
+                  <div className="space-y-3">
+                    <a 
+                      href={`/acc/?id=${account.id}`}
+                      className="block w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium text-center shadow-lg hover:shadow-blue-500/25"
+                    >
+                      <Icon icon="mdi:eye" className="inline mr-2" />
+                      View Details
+                    </a>
+                    
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => addToCart(account)}
+                        className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-4 rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 font-medium text-center shadow-lg hover:shadow-green-500/25"
+                      >
+                        <Icon icon="mdi:cart-plus" className="inline mr-2" />
+                        <span className="hidden sm:inline">Add to Cart</span>
+                        <span className="sm:hidden">Cart</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => setPaymentModal({ isOpen: true, item: account })}
+                        className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 px-4 rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-medium text-center shadow-lg hover:shadow-purple-500/25"
+                      >
+                        <Icon icon="mdi:credit-card" className="inline mr-2" />
+                        <span className="hidden sm:inline">Buy Now</span>
+                        <span className="sm:hidden">Buy</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
@@ -560,16 +717,42 @@ function MainPage() {
           </div>
         </div>
       </footer>
+
+      {/* Cart Modal */}
+      <CartModal
+        isOpen={cartModalOpen}
+        onClose={() => setCartModalOpen(false)}
+      />
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={paymentModal.isOpen}
+        onClose={() => setPaymentModal({ isOpen: false, item: null })}
+        item={paymentModal.item}
+        quantity={1}
+      />
     </div>
   )
 }
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<MainPage />} />
-      <Route path="/acc" element={<AccountDetailPage />} />
-    </Routes>
+    <CartProvider>
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/acc" element={<AccountDetailPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
+    </CartProvider>
   )
 }
 
