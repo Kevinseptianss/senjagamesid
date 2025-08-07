@@ -2,12 +2,19 @@
   "functions": {
     "api/lzt-proxy.js": {
       "maxDuration": 30
+    },
+    "api/winpay/**/*.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
     {
       "source": "/api/lzt-proxy/(.*)",
       "destination": "/api/lzt-proxy?path=$1"
+    },
+    {
+      "source": "/api/winpay/(.*)",
+      "destination": "/api/winpay/$1"
     },
     {
       "source": "/(.*)",
@@ -28,7 +35,7 @@
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
+          "value": "Content-Type, Authorization, X-Timestamp, X-Partner-ID, X-Signature, X-External-ID, Channel-ID"
         }
       ]
     }
