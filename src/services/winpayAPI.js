@@ -10,16 +10,6 @@ class WinPayAPI {
     this.clientSecret = import.meta.env.VITE_WINPAY_CLIENT_SECRET;
     this.demoMode = import.meta.env.VITE_WINPAY_DEMO_MODE === 'true';
     
-    // Log configuration for debugging
-    console.log('WinPay API Configuration:', {
-      baseURL: this.baseURL,
-      partnerId: this.partnerId,
-      channelId: this.channelId,
-      demoMode: this.demoMode,
-      hasPrivateKey: !!this.privateKey,
-      hasClientSecret: !!this.clientSecret,
-      isDev: import.meta.env.DEV
-    });
   }
 
   // Generate timestamp in ISO8601 format

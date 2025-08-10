@@ -113,7 +113,6 @@ const SteamPage = ({ onBack }) => {
       views: accountData.views || 0,
       category: accountData.category || 'Steam',
       
-      // Raw data for debugging
       rawData: apiAccount
     }
   }
@@ -125,8 +124,6 @@ const SteamPage = ({ onBack }) => {
 
     try {
       const response = await api.getSteamAccounts(newFilters)
-      
-      // Debug: Log the raw API response
       
       if (response && response.items) {
         const transformedAccounts = response.items.map(transformSteamAccount)
@@ -398,7 +395,6 @@ const SteamPage = ({ onBack }) => {
                     <span>Views: {account.views}</span>
                   </div>
                   
-                  {/* Steam ID for debugging */}
                   {account.steamId && (
                     <div className="mt-1 text-xs text-gray-600">
                       Steam ID: {account.steamId}

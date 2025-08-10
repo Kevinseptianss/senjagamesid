@@ -16,7 +16,6 @@ import ProtectedRoute from './components/ProtectedRoute'
 import CartModal from './components/CartModal'
 import PaymentModal from './components/PaymentModal'
 import ZelenkaAPI from './services/zelenkaAPI'
-import DebugFirestore from './components/DebugFirestore'
 
 import { CartProvider } from './context/CartContext'
 
@@ -343,13 +342,6 @@ function MainPage() {
           </div>
         </div>
       </header>
-
-      {/* Debug Firestore (temporary) */}
-      {user && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <DebugFirestore />
-        </div>
-      )}
 
       {/* Categories */}
       <section className="py-8 relative" style={{ overflow: 'visible' }}>

@@ -264,11 +264,6 @@ const SearchableGameDropdown = ({
                         />
                         <span className="text-gray-300 text-sm flex-1 flex items-center">
                           {game.label}
-                          {game.isPopular && (
-                            <span className="ml-2 px-1.5 py-0.5 bg-orange-500 text-white text-xs rounded-full">
-                              Popular
-                            </span>
-                          )}
                         </span>
                         {isSelected && (
                           <Icon 

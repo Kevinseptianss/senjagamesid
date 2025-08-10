@@ -113,15 +113,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
       setGamesError(null)
       
       try {
-        console.log('Fetching games from ZelenkaAPI...')
-        
-        // Debug: Test the API connection first
-        const testResponse = await zelenkaAPI.testConnection()
-        console.log('API connection test:', testResponse)
-        
         const gamesArray = await zelenkaAPI.getSteamGamesList()
-        console.log('Games API response:', gamesArray)
-        console.log('Games API response type:', typeof gamesArray)
         
         if (gamesArray && Array.isArray(gamesArray) && gamesArray.length > 0) {
           console.log(`Loaded ${gamesArray.length} games from LZT Market API`)
@@ -276,16 +268,20 @@ const SteamFilters = ({ onFilterChange, loading }) => {
       if (game && game.value && game.label) {
         const safeGame = {
           value: game.value.toString(),
-          label: game.label.toString()
+          label: game.label.toString(),
+          isPopular: game.isPopular || false // Preserve the popularity flag
         };
         combinedGames.set(safeGame.value, safeGame);
       }
     };
     
-    // Priority 1: Use API games if available
+    // Priority 1: Use API games if available (already sorted by popularity)
     if (apiGames.length > 0) {
       apiGames.forEach(addGameSafely);
-      console.log(`Using ${apiGames.length} games from API`);
+      console.log(`Using ${apiGames.length} games from API (already sorted by popularity)`);
+      
+      // Convert Map back to array and preserve the original API order (which has popular games first)
+      return Array.from(combinedGames.values());
     } else {
       // Priority 2: Fallback to hardcoded games
       console.log('Using fallback hardcoded games');
@@ -298,14 +294,14 @@ const SteamFilters = ({ onFilterChange, loading }) => {
       
       // Add from inventoryGames
       inventoryGames.forEach(addGameSafely);
+      
+      // Convert Map back to array and sort alphabetically for fallback games
+      return Array.from(combinedGames.values()).sort((a, b) => {
+        const labelA = (a.label || '').toString().toLowerCase();
+        const labelB = (b.label || '').toString().toLowerCase();
+        return labelA.localeCompare(labelB);
+      });
     }
-    
-    // Convert Map back to array and sort alphabetically with safe string comparison
-    return Array.from(combinedGames.values()).sort((a, b) => {
-      const labelA = (a.label || '').toString().toLowerCase();
-      const labelB = (b.label || '').toString().toLowerCase();
-      return labelA.localeCompare(labelB);
-    });
   }, [apiGames]);
 
   const handleFilterChange = (field, value) => {
