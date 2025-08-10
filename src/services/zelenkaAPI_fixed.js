@@ -222,21 +222,67 @@ class ZelenkaAPI {
     }
   }
 
-  // Get Steam games list (based on node-lzt getGames)
+  // Get Steam games list (using proxy-aware makeRequest method)
   async getSteamGamesList() {
     try {
-      // This should return available games for Steam category
-      const response = await this.makeRequest('/market/steam/games');
-      return response;
-    } catch (error) {
-      // Try alternative endpoint
-      try {
-        const altResponse = await this.makeRequest('/category/steam/games');
-        return altResponse;
-      } catch (altError) {
-        throw error;
+      console.log('Trying to fetch Steam games...');
+      
+      // Use the correct endpoint that works
+      const response = await this.makeRequest('/steam/games');
+      console.log('Steam games API response:', response);
+      
+      // Handle the actual API response format: { games: [array of game objects] }
+      if (response && response.games && Array.isArray(response.games)) {
+        console.log('Found games array in response.games');
+        
+        const gamesArray = response.games.map(game => ({
+          value: game.app_id.toString(),
+          label: game.title || game.abbr || `Game ${game.app_id}`,
+          isPopular: this.isPopularGame(game.app_id)
+        }));
+        
+        // Filter out any invalid entries
+        const validGames = gamesArray
+          .filter(game => game.value && game.label && game.label !== '[object Object]');
+        
+        // Sort: Popular games first, then alphabetically within each group
+        const sortedGames = validGames.sort((a, b) => {
+          // Popular games come first
+          if (a.isPopular && !b.isPopular) return -1;
+          if (!a.isPopular && b.isPopular) return 1;
+          
+          // Within the same group (popular or not), sort alphabetically
+          return a.label.localeCompare(b.label);
+        });
+        
+        console.log(`Successfully loaded ${sortedGames.length} Steam games from LZT Market API`);
+        console.log('First 5 games:', sortedGames.slice(0, 5));
+        
+        return sortedGames;
       }
+      
+      console.warn('Unexpected API response format, using fallback list');
+      return this.getPopularSteamGamesList();
+      
+    } catch (error) {
+      console.error('Error fetching Steam games:', error);
+      console.log('Using fallback games list');
+      return this.getPopularSteamGamesList();
     }
+  }
+
+  // Check if a game is popular/frequently traded
+  isPopularGame(appId) {
+    const popularGameIds = [
+      '730', '578080', '570', '271590', '252490', // CS2, PUBG, Dota 2, GTA V, Rust
+      '1172470', '381210', '359550', '440', '346110', // Apex, Dead by Daylight, R6, TF2, ARK
+      '252950', '230410', '238960', '444090', '218620', // Rocket League, Warframe, PoE, Paladins, Payday 2
+      '304930', '4000', '550', '433850', '377160', // Unturned, Garry's Mod, L4D2, Z1, Fallout 4
+      '292030', '72850', '582010', '413150', '105600', // Witcher 3, Skyrim, MH World, Stardew, Terraria
+      '1245620', '1086940', '1628350', '431960' // Elden Ring, BG3, New World, Wallpaper Engine
+    ];
+    
+    return popularGameIds.includes(appId.toString());
   }
 
   // Get Steam accounts with pagination - fetch multiple pages
@@ -375,17 +421,73 @@ class ZelenkaAPI {
     }
   }
 
-  // Get popular Steam games for quick filtering
-  getPopularSteamGames() {
+  // Get popular Steam games for quick filtering (fallback list)
+  getPopularSteamGamesList() {
     return [
-      { id: 578080, name: 'PUBG: BATTLEGROUNDS', abbr: 'PUBG' },
-      { id: 730, name: 'Counter-Strike 2', abbr: 'CS2' },
-      { id: 570, name: 'Dota 2', abbr: 'Dota 2' },
-      { id: 440, name: 'Team Fortress 2', abbr: 'TF2' },
-      { id: 252490, name: 'Rust', abbr: 'Rust' },
-      { id: 271590, name: 'Grand Theft Auto V', abbr: 'GTA V' },
-      { id: 381210, name: 'Dead by Daylight', abbr: 'Dead by Daylight' },
-      { id: 1172470, name: 'Apex Legends', abbr: 'Apex Legends' }
+      // Most traded games on LZT Market
+      { value: '730', label: 'Counter-Strike 2' },
+      { value: '578080', label: 'PUBG: BATTLEGROUNDS' },
+      { value: '570', label: 'Dota 2' },
+      { value: '271590', label: 'Grand Theft Auto V' },
+      { value: '252490', label: 'Rust' },
+      { value: '1172470', label: 'Apex Legends' },
+      { value: '381210', label: 'Dead by Daylight' },
+      { value: '359550', label: "Tom Clancy's Rainbow Six Siege" },
+      { value: '440', label: 'Team Fortress 2' },
+      { value: '346110', label: 'ARK: Survival Evolved' },
+      
+      // Popular multiplayer games
+      { value: '252950', label: 'Rocket League' },
+      { value: '230410', label: 'Warframe' },
+      { value: '238960', label: 'Path of Exile' },
+      { value: '444090', label: 'Paladins' },
+      { value: '218620', label: 'PAYDAY 2' },
+      { value: '304930', label: 'Unturned' },
+      { value: '4000', label: "Garry's Mod" },
+      { value: '550', label: 'Left 4 Dead 2' },
+      { value: '433850', label: 'Z1 Battle Royale' },
+      
+      // Popular single-player and co-op games
+      { value: '377160', label: 'Fallout 4' },
+      { value: '292030', label: 'The Witcher 3: Wild Hunt' },
+      { value: '72850', label: 'The Elder Scrolls V: Skyrim' },
+      { value: '582010', label: 'Monster Hunter: World' },
+      { value: '413150', label: 'Stardew Valley' },
+      { value: '105600', label: 'Terraria' },
+      { value: '108600', label: 'Project Zomboid' },
+      { value: '251570', label: '7 Days to Die' },
+      { value: '262060', label: 'Darkest Dungeon' },
+      { value: '322330', label: 'Dont Starve Together' },
+      
+      // Classic games
+      { value: '70', label: 'Half-Life' },
+      { value: '220', label: 'Half-Life 2' },
+      { value: '400', label: 'Portal' },
+      { value: '620', label: 'Portal 2' },
+      { value: '8930', label: "Sid Meier's Civilization V" },
+      { value: '268500', label: 'XCOM 2' },
+      { value: '22330', label: 'The Elder Scrolls IV: Oblivion' },
+      
+      // Newer popular games
+      { value: '1245620', label: 'Elden Ring' },
+      { value: '1086940', label: "Baldur's Gate 3" },
+      { value: '1628350', label: 'New World' },
+      { value: '431960', label: 'Wallpaper Engine' },
+      
+      // Borderlands series
+      { value: '49520', label: 'Borderlands 2' },
+      { value: '397540', label: 'Borderlands 3' },
+      
+      // Additional popular games
+      { value: '232090', label: 'Killing Floor 2' },
+      { value: '383870', label: 'Firewatch' },
+      { value: '753', label: 'Steam' }, // Steam inventory
+      
+      // Recent popular titles
+      { value: '2623090', label: 'InZOI' },
+      { value: '1142710', label: 'Gorilla Tag' },
+      { value: '1649240', label: 'Schedule I' },
+      { value: '2056610', label: 'R.E.P.O.' }
     ];
   }
 

@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Icon } from '@iconify/react'
+import SearchableGameDropdown from './SearchableGameDropdown'
+import ZelenkaAPI from '../services/zelenkaAPI_fixed'
 
 const SteamFilters = ({ onFilterChange, loading }) => {
   const [filters, setFilters] = useState({
@@ -95,6 +97,56 @@ const SteamFilters = ({ onFilterChange, loading }) => {
     dota2: false,
     rust: false
   })
+
+  // State for API games
+  const [apiGames, setApiGames] = useState([])
+  const [gamesLoading, setGamesLoading] = useState(false)
+  const [gamesError, setGamesError] = useState(null)
+
+  // Initialize ZelenkaAPI
+  const zelenkaAPI = new ZelenkaAPI()
+
+  // Fetch games from API on component mount
+  useEffect(() => {
+    const fetchGames = async () => {
+      setGamesLoading(true)
+      setGamesError(null)
+      
+      try {
+        console.log('Fetching games from ZelenkaAPI...')
+        
+        // Debug: Test the API connection first
+        const testResponse = await zelenkaAPI.testConnection()
+        console.log('API connection test:', testResponse)
+        
+        const gamesArray = await zelenkaAPI.getSteamGamesList()
+        console.log('Games API response:', gamesArray)
+        console.log('Games API response type:', typeof gamesArray)
+        
+        if (gamesArray && Array.isArray(gamesArray) && gamesArray.length > 0) {
+          console.log(`Loaded ${gamesArray.length} games from LZT Market API`)
+          console.log('First 3 games:', gamesArray.slice(0, 3))
+          console.log('Sample game structure:', gamesArray[0])
+          setApiGames(gamesArray)
+        } else {
+          console.warn('Unexpected games API response format or empty array:', gamesArray)
+          setGamesError('No games received from API - using default games')
+          setApiGames([])  // Use default games from SearchableGameDropdown
+        }
+      } catch (error) {
+        console.error('Error fetching games from API:', error)
+        setGamesError(error.message)
+        
+        // Fallback to default games on error
+        console.log('Falling back to default games list...')
+        setApiGames([])  // Use default games from SearchableGameDropdown
+      } finally {
+        setGamesLoading(false)
+      }
+    }
+    
+    fetchGames()
+  }, [])
 
   // Popular searches data - now with game IDs and icons like Quick Game Filters
   const popularSearches = [
@@ -214,6 +266,47 @@ const SteamFilters = ({ onFilterChange, loading }) => {
     { value: 'month', label: 'months ago' },
     { value: 'day', label: 'days ago' }
   ]
+
+  // Combined and deduplicated games list for the searchable dropdown
+  const allGamesList = React.useMemo(() => {
+    const combinedGames = new Map();
+    
+    // Helper function to safely add games with validation
+    const addGameSafely = (game) => {
+      if (game && game.value && game.label) {
+        const safeGame = {
+          value: game.value.toString(),
+          label: game.label.toString()
+        };
+        combinedGames.set(safeGame.value, safeGame);
+      }
+    };
+    
+    // Priority 1: Use API games if available
+    if (apiGames.length > 0) {
+      apiGames.forEach(addGameSafely);
+      console.log(`Using ${apiGames.length} games from API`);
+    } else {
+      // Priority 2: Fallback to hardcoded games
+      console.log('Using fallback hardcoded games');
+      
+      // Add from popularSearches (removing appid property)
+      popularSearches.forEach(addGameSafely);
+      
+      // Add from gamesList
+      gamesList.forEach(addGameSafely);
+      
+      // Add from inventoryGames
+      inventoryGames.forEach(addGameSafely);
+    }
+    
+    // Convert Map back to array and sort alphabetically with safe string comparison
+    return Array.from(combinedGames.values()).sort((a, b) => {
+      const labelA = (a.label || '').toString().toLowerCase();
+      const labelB = (b.label || '').toString().toLowerCase();
+      return labelA.localeCompare(labelB);
+    });
+  }, [apiGames]);
 
   const handleFilterChange = (field, value) => {
     const newFilters = { ...filters, [field]: value }
@@ -436,47 +529,30 @@ const SteamFilters = ({ onFilterChange, loading }) => {
             
             {/* First Column */}
             <div className="filterColumn space-y-4">
-              {/* Games Selection */}
+              {/* Games Selection - Dynamic API-powered Searchable Dropdown */}
               <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Pilih Game yang ada di Dalam Akun</label>
-                <div className="bg-gray-800 border border-gray-600 rounded-lg p-2 max-h-32 overflow-y-auto">
-                  {gamesList.slice(0, 10).map(game => (
-                    <label key={game.value} className="flex items-center space-x-2 py-1 hover:bg-gray-700 px-2 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filters.game.includes(game.value)}
-                        onChange={(e) => {
-                          const newGames = e.target.checked 
-                            ? [...filters.game, game.value]
-                            : filters.game.filter(g => g !== game.value);
-                          handleFilterChange('game', newGames);
-                        }}
-                        className="rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
-                      />
-                      <span className="text-gray-300 text-sm">{game.label}</span>
-                    </label>
-                  ))}
-                </div>
-                {filters.game.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {filters.game.map(gameId => {
-                      const game = gamesList.find(g => g.value === gameId);
-                      return (
-                        <span key={gameId} className="bg-purple-600 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
-                          <span>{game?.label || gameId}</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newGames = filters.game.filter(g => g !== gameId);
-                              handleFilterChange('game', newGames);
-                            }}
-                            className="text-white hover:text-gray-300"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      );
-                    })}
+                <label className="text-gray-300 text-sm font-medium flex items-center space-x-2">
+                  <span>Pilih Game yang ada di Dalam Akun</span>
+                  {gamesLoading && (
+                    <Icon icon="eos-icons:loading" className="text-purple-500 text-lg animate-spin" />
+                  )}
+                  {gamesError && (
+                    <Icon icon="mdi:alert-circle" className="text-red-500 text-lg" title={`Error: ${gamesError}`} />
+                  )}
+                </label>
+                
+                <SearchableGameDropdown
+                  selectedGames={filters.game}
+                  onGameChange={(newGames) => handleFilterChange('game', newGames)}
+                  gamesList={allGamesList}
+                  placeholder={gamesLoading ? "Loading games..." : "Cari dan pilih games..."}
+                  label=""
+                  disabled={gamesLoading}
+                />
+                
+                {gamesError && (
+                  <div className="text-xs text-red-400 mt-1">
+                    Failed to load games from API. Using fallback list.
                   </div>
                 )}
               </div>
