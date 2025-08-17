@@ -1,11 +1,17 @@
 import { Icon } from '@iconify/react'
-import { getPriceValue, convertToIDR, formatCurrency } from '../utils/currency'
+import { Link } from 'react-router-dom'
+import { getPriceValue, convertToIDR, formatCurrency, formatUSD } from '../utils/currency'
 
 const SteamAccountCard = ({ account }) => {
   // Get formatted price in IDR
   const priceUSD = getPriceValue(account);
   const priceIDR = convertToIDR(priceUSD);
   const formattedPrice = formatCurrency(priceIDR);
+
+  // Add a click handler to log what's being passed to detail page
+  const handleClick = () => {
+    
+  };
   
   // Get warranty info
   const getWarrantyInfo = () => {
@@ -121,9 +127,10 @@ const SteamAccountCard = ({ account }) => {
   }
 
   return (
-    <a 
-      href={`/acc/?id=${account.item_id || account.id}`} 
-      target="_blank" 
+    <Link 
+      to={`/acc/?id=${account.item_id || account.id}`}
+      state={{ account: account }} // Pass account data via navigation state
+      onClick={handleClick}
       className="account bg-gray-900 border border-gray-700 hover:border-purple-500 transition-all duration-300 rounded-xl overflow-hidden relative shadow-lg hover:shadow-xl flex flex-col min-h-[400px]"
     >
       {/* Header with Price */}
@@ -135,7 +142,7 @@ const SteamAccountCard = ({ account }) => {
         <div className="price-badge">
           <div className="text-right">
             <div className="text-xl font-bold text-purple-400">{formattedPrice}</div>
-            <div className="text-xs text-gray-400 mt-0.5">${priceUSD}</div>
+            <div className="text-xs text-gray-400 mt-0.5">${formatUSD(priceUSD)}</div>
           </div>
         </div>
       </div>
@@ -299,8 +306,9 @@ const SteamAccountCard = ({ account }) => {
 
       {/* Hover Effect */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent to-purple-900 opacity-0 hover:opacity-5 transition-opacity duration-300 pointer-events-none rounded-xl"></div>
-    </a>
+    </Link>
   )
 }
 
 export default SteamAccountCard
+

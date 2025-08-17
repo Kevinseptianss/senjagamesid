@@ -65,9 +65,9 @@ const Signup = () => {
     }
 
     try {
-      console.log('Starting signup process...');
+      
       await signUp(formData.email, formData.password, formData.fullName);
-      console.log('Signup successful, navigating to dashboard...');
+      
       navigate('/dashboard');
     } catch (error) {
       console.error('Signup error:', error);
@@ -321,3 +321,4 @@ const Signup = () => {
 };
 
 export default Signup;
+

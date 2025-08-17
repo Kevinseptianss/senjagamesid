@@ -22,10 +22,6 @@ const verifyWinPaySignature = (payload, timestamp, partnerId, signature, clientS
 // Handle WinPay Virtual Account payment callback
 router.post('/v1.0/transfer-va/payment', async (req, res) => {
   try {
-    console.log('WinPay Callback received:', {
-      headers: req.headers,
-      body: req.body
-    });
 
     // Extract headers
     const timestamp = req.headers['x-timestamp'];
@@ -66,13 +62,6 @@ router.post('/v1.0/transfer-va/payment', async (req, res) => {
       referenceNo,
       additionalInfo
     } = req.body;
-
-    console.log('Processing payment callback for:', {
-      trxId,
-      virtualAccountNo,
-      paidAmount: paidAmount?.value,
-      contractId: additionalInfo?.contractId
-    });
 
     // Find transaction in Firestore using trxId
     const transactionRef = doc(db, 'transactions', trxId);
@@ -140,12 +129,6 @@ router.post('/v1.0/transfer-va/payment', async (req, res) => {
       }
     }
 
-    console.log('Payment callback processed successfully:', {
-      trxId,
-      status: 'paid',
-      amount: paidAmountValue
-    });
-
     // Return expected response according to WinPay documentation
     res.status(200).json({
       responseCode: '2002500',
@@ -169,3 +152,4 @@ router.get('/health', (req, res) => {
 });
 
 export default router;
+

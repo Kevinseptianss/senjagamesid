@@ -26,9 +26,9 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log('Starting login process...');
+      
       await signIn(formData.email, formData.password);
-      console.log('Login successful, navigating to dashboard...');
+      
       navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
@@ -159,3 +159,4 @@ const Login = () => {
 };
 
 export default Login;
+

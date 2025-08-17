@@ -17,8 +17,7 @@ class LZTMarketSDK {
     
     // Configure server
     this.sdk.server('https://prod-api.lzt.market');
-    
-    console.log('LZT Market SDK initialized');
+
   }
 
   /**
@@ -27,14 +26,11 @@ class LZTMarketSDK {
    */
   async getSteamGames() {
     try {
-      console.log('Fetching Steam games from LZT Market API...');
-      
+
       const response = await this.sdk.categoryGames({
         categoryName: 'steam'
       });
-      
-      console.log('LZT Market API response:', response);
-      
+
       // Extract games from response
       if (response && response.data && response.data.games) {
         // Convert object to array format
@@ -43,8 +39,7 @@ class LZTMarketSDK {
           value: gameId.toString(),
           label: gameName
         }));
-        
-        console.log(`Successfully loaded ${gamesArray.length} Steam games from LZT Market API`);
+
         return gamesArray;
       } else {
         console.warn('Unexpected response format from LZT Market API:', response);
@@ -63,14 +58,11 @@ class LZTMarketSDK {
    */
   async getCategoryGames(categoryName) {
     try {
-      console.log(`Fetching ${categoryName} games from LZT Market API...`);
-      
+
       const response = await this.sdk.categoryGames({
         categoryName: categoryName
       });
-      
-      console.log(`LZT Market API response for ${categoryName}:`, response);
-      
+
       // Extract games from response
       if (response && response.data && response.data.games) {
         const gamesObject = response.data.games;
@@ -78,8 +70,7 @@ class LZTMarketSDK {
           value: gameId.toString(),
           label: gameName
         }));
-        
-        console.log(`Successfully loaded ${gamesArray.length} ${categoryName} games from LZT Market API`);
+
         return gamesArray;
       } else {
         console.warn(`Unexpected response format from LZT Market API for ${categoryName}:`, response);
@@ -109,3 +100,4 @@ class LZTMarketSDK {
 }
 
 export default LZTMarketSDK;
+

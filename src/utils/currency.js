@@ -58,3 +58,14 @@ export const formatPriceWithUSD = (item) => {
     usdAmount: priceUSD
   };
 };
+
+// Format USD price with appropriate decimal places
+export const formatUSD = (usdAmount) => {
+  if (usdAmount < 0.01) {
+    return `$${usdAmount.toFixed(4)}`;
+  } else if (usdAmount < 1) {
+    return `$${usdAmount.toFixed(3)}`;
+  } else {
+    return `$${usdAmount.toFixed(2)}`;
+  }
+};

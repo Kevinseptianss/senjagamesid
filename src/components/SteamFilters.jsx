@@ -1,7 +1,90 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Icon } from '@iconify/react'
 import SearchableGameDropdown from './SearchableGameDropdown'
 import ZelenkaAPI from '../services/zelenkaAPI_fixed'
+
+// Popular Steam game searches
+const popularSearches = [
+  { value: '730', label: 'Counter-Strike 2' },
+  { value: '570', label: 'Dota 2' },
+  { value: '252490', label: 'Rust' },
+  { value: '4000', label: 'Garry\'s Mod' },
+  { value: '440', label: 'Team Fortress 2' },
+  { value: '578080', label: 'PUBG' }
+]
+
+// Game lists for fallback
+const gamesList = [
+  { value: '730', label: 'Counter-Strike 2' },
+  { value: '570', label: 'Dota 2' },
+  { value: '252490', label: 'Rust' },
+  { value: '4000', label: 'Garry\'s Mod' },
+  { value: '440', label: 'Team Fortress 2' },
+  { value: '578080', label: 'PUBG' },
+  { value: '271590', label: 'Grand Theft Auto V' },
+  { value: '892970', label: 'Valheim' },
+  { value: '1172470', label: 'Apex Legends' },
+  { value: '105600', label: 'Terraria' }
+]
+
+// Inventory games
+const inventoryGames = [
+  { value: '730', label: 'CS2 Skins' },
+  { value: '570', label: 'Dota 2 Items' },
+  { value: '440', label: 'TF2 Items' },
+  { value: '252490', label: 'Rust Items' }
+]
+
+// Quick game filters for UI
+const quickGameFilters = [
+  { value: '730', label: 'Counter-Strike 2' },
+  { value: '570', label: 'Dota 2' },
+  { value: '252490', label: 'Rust' },
+  { value: '4000', label: 'Garry\'s Mod' },
+  { value: '440', label: 'Team Fortress 2' },
+  { value: '578080', label: 'PUBG' }
+]
+
+// Warranty options
+const warrantyOptions = [
+  { value: 'yes', label: 'With warranty' },
+  { value: 'no', label: 'Without warranty' }
+]
+
+// Countries list
+const countries = [
+  { value: 'US', label: 'United States' },
+  { value: 'RU', label: 'Russia' },
+  { value: 'DE', label: 'Germany' },
+  { value: 'FR', label: 'France' },
+  { value: 'GB', label: 'United Kingdom' },
+  { value: 'CA', label: 'Canada' },
+  { value: 'AU', label: 'Australia' },
+  { value: 'BR', label: 'Brazil' },
+  { value: 'CN', label: 'China' },
+  { value: 'JP', label: 'Japan' },
+  { value: 'KR', label: 'South Korea' },
+  { value: 'IN', label: 'India' },
+  { value: 'IT', label: 'Italy' },
+  { value: 'ES', label: 'Spain' },
+  { value: 'NL', label: 'Netherlands' },
+  { value: 'SE', label: 'Sweden' },
+  { value: 'NO', label: 'Norway' },
+  { value: 'PL', label: 'Poland' },
+  { value: 'TR', label: 'Turkey' },
+  { value: 'UA', label: 'Ukraine' }
+]
+
+// Registration periods
+const registrationPeriods = [
+  { value: '1week', label: 'Last week' },
+  { value: '1month', label: 'Last month' },
+  { value: '3months', label: 'Last 3 months' },
+  { value: '6months', label: 'Last 6 months' },
+  { value: '1year', label: 'Last year' },
+  { value: '2years', label: 'Last 2 years' },
+  { value: '5years', label: 'Last 5 years' }
+]
 
 const SteamFilters = ({ onFilterChange, loading }) => {
   const [filters, setFilters] = useState({
@@ -48,10 +131,23 @@ const SteamFilters = ({ onFilterChange, loading }) => {
     inv_game: '',
     inv_min: '',
     inv_max: '',
+    inv_value_min: '',
+    inv_value_max: '',
     
     // Registration age
     reg: '',
     reg_period: '',
+    period: '',
+    
+    // Account details
+    account_years_min: '',
+    account_years_max: '',
+    inventory_min: '',
+    inventory_max: '',
+    wallet_min: '',
+    wallet_max: '',
+    account_level_min: '',
+    account_level_max: '',
     
     // Steam stats
     balance_min: '',
@@ -61,6 +157,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
     points_min: '',
     points_max: '',
     no_vac: false,
+    vac: '',
     email_type: [],
     
     // CS2 specific
@@ -116,153 +213,22 @@ const SteamFilters = ({ onFilterChange, loading }) => {
         const gamesArray = await zelenkaAPI.getSteamGamesList()
         
         if (gamesArray && Array.isArray(gamesArray) && gamesArray.length > 0) {
-          console.log(`Loaded ${gamesArray.length} games from LZT Market API`)
-          console.log('First 3 games:', gamesArray.slice(0, 3))
-          console.log('Sample game structure:', gamesArray[0])
           setApiGames(gamesArray)
-        } else {
-          console.warn('Unexpected games API response format or empty array:', gamesArray)
-          setGamesError('No games received from API - using default games')
-          setApiGames([])  // Use default games from SearchableGameDropdown
         }
       } catch (error) {
-        console.error('Error fetching games from API:', error)
-        setGamesError(error.message)
-        
-        // Fallback to default games on error
-        console.log('Falling back to default games list...')
-        setApiGames([])  // Use default games from SearchableGameDropdown
+        setGamesError('Failed to load games from API')
       } finally {
         setGamesLoading(false)
       }
     }
-    
+
     fetchGames()
   }, [])
 
-  // Popular searches data - now with game IDs and icons like Quick Game Filters
-  const popularSearches = [
-    { value: '730', label: 'CS2 Prime', appid: '730' },
-    { value: '381210', label: 'Dead by Daylight', appid: '381210' },
-    { value: '2623090', label: 'InZOI', appid: '2623090' },
-    { value: '1142710', label: 'Gorilla Tag', appid: '1142710' },
-    { value: '252490', label: 'Rust', appid: '252490' },
-    { value: '1245620', label: 'Elden Ring', appid: '1245620' },
-    { value: '1649240', label: 'Schedule I', appid: '1649240' },
-    { value: '2056610', label: 'R.E.P.O.', appid: '2056610' },
-    { value: '1086940', label: 'BG3', appid: '1086940' }
-  ]
+  // Memoized combined games list with proper fallback
+  const combinedGames = useMemo(() => {
+    const combinedGames = new Map()
 
-  // Quick game filters - one-click filters for popular games
-  const quickGameFilters = [
-    { value: '578080', label: 'PUBG', icon: '🔫' },
-    { value: '730', label: 'CS2', icon: '🎯' },
-    { value: '271590', label: 'GTA V', icon: '🚗' },
-    { value: '570', label: 'Dota 2', icon: '⚔️' },
-    { value: '252950', label: 'Rocket League', icon: '⚽' },
-    { value: '252490', label: 'Rust', icon: '🏗️' },
-    { value: '359550', label: 'R6 Siege', icon: '🏠' },
-    { value: '346110', label: 'ARK', icon: '🦕' }
-  ]
-
-  // Games list for dropdown
-  const gamesList = [
-    { value: '578080', label: 'PUBG: BATTLEGROUNDS' },
-    { value: '570', label: 'Dota 2' },
-    { value: '730', label: 'CS2 Prime' },
-    { value: '433850', label: 'Z1 Battle Royale' },
-    { value: '440', label: 'Team Fortress 2' },
-    { value: '271590', label: 'GTA V' },
-    { value: '359550', label: "Tom Clancy's Rainbow Six Siege" },
-    { value: '238960', label: 'Path of Exile' },
-    { value: '230410', label: 'Warframe' },
-    { value: '4000', label: "Garry's Mod" },
-    { value: '346110', label: 'ARK: Survival Evolved' },
-    { value: '252950', label: 'Rocket League' },
-    { value: '444090', label: 'Paladins' },
-    { value: '218620', label: 'PAYDAY 2' },
-    { value: '304930', label: 'Unturned' },
-    { value: '252490', label: 'Rust' },
-    { value: '8930', label: "Sid Meier's Civilization V" },
-    { value: '268500', label: 'XCOM 2' },
-    { value: '377160', label: 'Fallout 4' },
-    { value: '105600', label: 'Terraria' }
-  ]
-
-  // Warranty options
-  const warrantyOptions = [
-    { value: '-1', label: '12 hours' },
-    { value: '0', label: '24 hours' },
-    { value: '1', label: '3 days' }
-  ]
-
-  // Countries list (abbreviated version)
-  const countries = [
-    { value: 'Afghanistan', label: 'Afghanistan' },
-    { value: 'Albania', label: 'Albania' },
-    { value: 'Algeria', label: 'Algeria' },
-    { value: 'Argentina', label: 'Argentina' },
-    { value: 'Australia', label: 'Australia' },
-    { value: 'Austria', label: 'Austria' },
-    { value: 'Belgium', label: 'Belgium' },
-    { value: 'Brazil', label: 'Brazil' },
-    { value: 'Bulgaria', label: 'Bulgaria' },
-    { value: 'Canada', label: 'Canada' },
-    { value: 'Chile', label: 'Chile' },
-    { value: 'China', label: 'China' },
-    { value: 'Colombia', label: 'Colombia' },
-    { value: 'Croatia', label: 'Croatia' },
-    { value: 'Czech Republic (Czechia)', label: 'Czech Republic (Czechia)' },
-    { value: 'Denmark', label: 'Denmark' },
-    { value: 'Finland', label: 'Finland' },
-    { value: 'France', label: 'France' },
-    { value: 'Germany', label: 'Germany' },
-    { value: 'Greece', label: 'Greece' },
-    { value: 'Hungary', label: 'Hungary' },
-    { value: 'India', label: 'India' },
-    { value: 'Indonesia', label: 'Indonesia' },
-    { value: 'Ireland', label: 'Ireland' },
-    { value: 'Italy', label: 'Italy' },
-    { value: 'Japan', label: 'Japan' },
-    { value: 'Netherlands', label: 'Netherlands' },
-    { value: 'Norway', label: 'Norway' },
-    { value: 'Poland', label: 'Poland' },
-    { value: 'Portugal', label: 'Portugal' },
-    { value: 'Romania', label: 'Romania' },
-    { value: 'Russian Federation', label: 'Russian Federation' },
-    { value: 'Spain', label: 'Spain' },
-    { value: 'Sweden', label: 'Sweden' },
-    { value: 'Switzerland', label: 'Switzerland' },
-    { value: 'Turkey', label: 'Turkey' },
-    { value: 'Ukraine', label: 'Ukraine' },
-    { value: 'United Kingdom', label: 'United Kingdom' },
-    { value: 'United States', label: 'United States' }
-  ]
-
-  // Inventory games for dropdown
-  const inventoryGames = [
-    { value: '730', label: 'CS2' },
-    { value: '578080', label: 'PUBG' },
-    { value: '570', label: 'Dota 2' },
-    { value: '440', label: 'Team Fortress 2' },
-    { value: '252490', label: 'Rust' },
-    { value: '753', label: 'Steam' },
-    { value: '304930', label: 'Unturned' },
-    { value: '232090', label: 'Killing Floor 2' },
-    { value: '322330', label: 'Dont Starve Together' }
-  ]
-
-  // Registration period options
-  const registrationPeriods = [
-    { value: 'year', label: 'years ago' },
-    { value: 'month', label: 'months ago' },
-    { value: 'day', label: 'days ago' }
-  ]
-
-  // Combined and deduplicated games list for the searchable dropdown
-  const allGamesList = React.useMemo(() => {
-    const combinedGames = new Map();
-    
     // Helper function to safely add games with validation
     const addGameSafely = (game) => {
       if (game && game.value && game.label) {
@@ -278,14 +244,12 @@ const SteamFilters = ({ onFilterChange, loading }) => {
     // Priority 1: Use API games if available (already sorted by popularity)
     if (apiGames.length > 0) {
       apiGames.forEach(addGameSafely);
-      console.log(`Using ${apiGames.length} games from API (already sorted by popularity)`);
-      
+
       // Convert Map back to array and preserve the original API order (which has popular games first)
       return Array.from(combinedGames.values());
     } else {
       // Priority 2: Fallback to hardcoded games
-      console.log('Using fallback hardcoded games');
-      
+
       // Add from popularSearches (removing appid property)
       popularSearches.forEach(addGameSafely);
       
@@ -540,7 +504,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                 <SearchableGameDropdown
                   selectedGames={filters.game}
                   onGameChange={(newGames) => handleFilterChange('game', newGames)}
-                  gamesList={allGamesList}
+                  gamesList={combinedGames}
                   placeholder={gamesLoading ? "Loading games..." : "Cari dan pilih games..."}
                   label=""
                   disabled={gamesLoading}
@@ -555,13 +519,13 @@ const SteamFilters = ({ onFilterChange, loading }) => {
 
               {/* Warranty Duration */}
               <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Warranty Duration</label>
+                <label className="text-gray-300 text-sm font-medium">Durasi Garansi</label>
                 <select
                   className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   value={filters.eg}
                   onChange={(e) => handleFilterChange('eg', e.target.value)}
                 >
-                  <option value="">Select warranty</option>
+                  <option value="">Pilih garansi</option>
                   {warrantyOptions.map(option => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -573,12 +537,12 @@ const SteamFilters = ({ onFilterChange, loading }) => {
               {/* Financial Filters */}
               <div className="space-y-3">
                 <div className="splitFilter">
-                  <label className="text-gray-300 text-sm font-medium">Total $ spent</label>
+                  <label className="text-gray-300 text-sm font-medium">Total Yang di Belanjakan di dalam Akun</label>
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="number"
                       min="1"
-                      placeholder="From"
+                      placeholder="Dari"
                       className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       value={filters.purchase_min}
                       onChange={(e) => handleFilterChange('purchase_min', e.target.value)}
@@ -586,7 +550,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                     <input
                       type="number"
                       min="1"
-                      placeholder="up to"
+                      placeholder="sampai"
                       className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       value={filters.purchase_max}
                       onChange={(e) => handleFilterChange('purchase_max', e.target.value)}
@@ -595,12 +559,12 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                 </div>
 
                 <div className="splitFilter">
-                  <label className="text-gray-300 text-sm font-medium">Total $ spent on games</label>
+                  <label className="text-gray-300 text-sm font-medium">Total $ yang dibelanjakan untuk games</label>
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="number"
                       min="1"
-                      placeholder="From"
+                      placeholder="Dari"
                       className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       value={filters.games_purchase_min}
                       onChange={(e) => handleFilterChange('games_purchase_min', e.target.value)}
@@ -608,7 +572,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                     <input
                       type="number"
                       min="1"
-                      placeholder="up to"
+                      placeholder="sampai"
                       className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       value={filters.games_purchase_max}
                       onChange={(e) => handleFilterChange('games_purchase_max', e.target.value)}
@@ -617,12 +581,12 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                 </div>
 
                 <div className="splitFilter">
-                  <label className="text-gray-300 text-sm font-medium">Total $ in-game purchases</label>
+                  <label className="text-gray-300 text-sm font-medium">Total $ pembelian dalam game</label>
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="number"
                       min="1"
-                      placeholder="From"
+                      placeholder="Dari"
                       className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       value={filters.ingame_purchase_min}
                       onChange={(e) => handleFilterChange('ingame_purchase_min', e.target.value)}
@@ -630,7 +594,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                     <input
                       type="number"
                       min="1"
-                      placeholder="up to"
+                      placeholder="sampai"
                       className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       value={filters.ingame_purchase_max}
                       onChange={(e) => handleFilterChange('ingame_purchase_max', e.target.value)}
@@ -649,7 +613,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                     checked={filters.trans}
                     onChange={(e) => handleFilterChange('trans', e.target.checked)}
                   />
-                  <span>With Transactions</span>
+                  <span>Dengan Transaksi</span>
                 </label>
                 <label className="flex items-center space-x-2 text-gray-300">
                   <input
@@ -658,30 +622,41 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                     checked={filters.no_trans}
                     onChange={(e) => handleFilterChange('no_trans', e.target.checked)}
                   />
-                  <span>No Transactions</span>
+                  <span>Tanpa Transaksi</span>
                 </label>
               </div>
 
-              {/* DLC Guide Button */}
-              <button
-                type="button"
-                className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors"
-              >
-                How to find a DLC ?
-              </button>
+              {/* DLC Guide Tooltip */}
+              <div className="relative group">
+                <button
+                  type="button"
+                  className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors cursor-help"
+                >
+                  Bagaimana cara mencari DLC ?
+                </button>
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-gray-800 border border-gray-600 rounded-lg p-3 text-sm text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity z-10 invisible group-hover:visible">
+                  <p className="font-medium mb-2">Tips mencari akun dengan DLC:</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Gunakan filter "Game" untuk memilih game yang memiliki DLC</li>
+                    <li>Periksa deskripsi akun untuk melihat DLC yang dimiliki</li>
+                    <li>Gunakan filter "Total $ yang dibelanjakan untuk games" untuk akun dengan pembelian tinggi</li>
+                    <li>Akun dengan level tinggi biasanya memiliki lebih banyak DLC</li>
+                  </ul>
+                </div>
+              </div>
             </div>
 
             {/* Second Column */}
             <div className="filterColumn space-y-4">
               {/* Country Selection */}
               <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Country</label>
+                <label className="text-gray-300 text-sm font-medium">Negara</label>
                 <select
                   className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   value={filters.country[0] || ''}
                   onChange={(e) => handleFilterChange('country', e.target.value ? [e.target.value] : [])}
                 >
-                  <option value="">Select a country</option>
+                  <option value="">Pilih Negara</option>
                   {countries.map(country => (
                     <option key={country.value} value={country.value} className="py-1">
                       {country.label}
@@ -937,12 +912,12 @@ const SteamFilters = ({ onFilterChange, loading }) => {
 
               {/* Points */}
               <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Points</label>
+                <label className="text-gray-300 text-sm font-medium">Poin</label>
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
                     min="1"
-                    placeholder="Points from"
+                    placeholder="Dari"
                     className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     value={filters.points_min}
                     onChange={(e) => handleFilterChange('points_min', e.target.value)}
@@ -950,39 +925,12 @@ const SteamFilters = ({ onFilterChange, loading }) => {
                   <input
                     type="number"
                     min="1"
-                    placeholder="up to"
+                    placeholder="sampai"
                     className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     value={filters.points_max}
                     onChange={(e) => handleFilterChange('points_max', e.target.value)}
                   />
                 </div>
-              </div>
-
-              {/* Checkboxes */}
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2 text-gray-300">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
-                    checked={filters.no_vac}
-                    onChange={(e) => handleFilterChange('no_vac', e.target.checked)}
-                  />
-                  <span>No VAC All games</span>
-                </label>
-                <label className="flex items-center space-x-2 text-gray-300">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
-                    checked={filters.email_type.includes('native')}
-                    onChange={(e) => {
-                      const newEmailTypes = e.target.checked 
-                        ? [...filters.email_type, 'native']
-                        : filters.email_type.filter(type => type !== 'native')
-                      handleFilterChange('email_type', newEmailTypes)
-                    }}
-                  />
-                  <span>Native mail</span>
-                </label>
               </div>
 
               {/* CS2 Section */}
@@ -1331,7 +1279,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
             data-value="price_to_up"
             onClick={() => handleSortChange('price_to_up')}
           >
-            Cheapest
+            Termurah
           </button>
           <button
             type="button"
@@ -1339,7 +1287,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
             data-value="price_to_down"
             onClick={() => handleSortChange('price_to_down')}
           >
-            Expensive
+            Termahal
           </button>
           <button
             type="button"
@@ -1347,7 +1295,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
             data-value="pdate_to_down_upload"
             onClick={() => handleSortChange('pdate_to_down_upload')}
           >
-            Newest
+            Terbaru
           </button>
           <button
             type="button"
@@ -1355,7 +1303,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
             data-value="pdate_to_up_upload"
             onClick={() => handleSortChange('pdate_to_up_upload')}
           >
-            Oldest
+            Paling Lama
           </button>
         </div>
 
@@ -1367,7 +1315,7 @@ const SteamFilters = ({ onFilterChange, loading }) => {
             className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg transition-colors font-medium"
             disabled={loading}
           >
-            {loading ? 'Loading...' : 'Apply Filters'}
+            {loading ? 'Memuat...' : 'Cari Akun'}
           </button>
         </div>
       </form>
@@ -1376,3 +1324,4 @@ const SteamFilters = ({ onFilterChange, loading }) => {
 }
 
 export default SteamFilters
+

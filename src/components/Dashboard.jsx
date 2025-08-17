@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Icon } from '@iconify/react';
+import PaymentDetailModal from './PaymentDetailModal';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -11,6 +12,8 @@ const Dashboard = () => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('purchased');
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [paymentDetailModal, setPaymentDetailModal] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -36,6 +39,24 @@ const Dashboard = () => {
       navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
+    }
+  };
+
+  const handleTransactionClick = (transaction) => {
+    setSelectedTransaction(transaction);
+    setPaymentDetailModal(true);
+  };
+
+  const handleTransactionUpdate = (updatedTransaction) => {
+    // Update the transaction in the userData state
+    if (userData && userData.ongoingTransactions) {
+      const updatedTransactions = userData.ongoingTransactions.map(t => 
+        t.trxId === updatedTransaction.trxId ? updatedTransaction : t
+      );
+      setUserData({
+        ...userData,
+        ongoingTransactions: updatedTransactions
+      });
     }
   };
 
@@ -249,7 +270,11 @@ const Dashboard = () => {
                 ) : (
                   <div className="grid gap-4 sm:gap-6">
                     {ongoingTransactions.map((transaction, index) => (
-                      <div key={index} className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 sm:p-6 hover:border-yellow-500/50 transition-all duration-200">
+                      <div 
+                        key={index} 
+                        onClick={() => handleTransactionClick(transaction)}
+                        className="bg-gray-800/50 border border-gray-700/50 rounded-xl p-4 sm:p-6 hover:border-yellow-500/50 transition-all duration-200 cursor-pointer hover:bg-gray-800/70"
+                      >
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
                           <div className="flex-1">
                             <div className="flex items-start space-x-3">
@@ -257,20 +282,40 @@ const Dashboard = () => {
                                 <Icon icon="mdi:clock-outline" className="text-yellow-400 text-xl" />
                               </div>
                               <div className="flex-1">
-                                <h4 className="text-white font-medium text-lg">{transaction.title}</h4>
-                                <p className="text-gray-300 text-sm mt-1">{transaction.description}</p>
-                                <div className="flex items-center text-yellow-400 text-sm mt-3">
-                                  <Icon icon="mdi:information" className="mr-1" />
-                                  Status: {transaction.status}
+                                <h4 className="text-white font-medium text-lg">
+                                  {transaction.item?.title || transaction.title || 'Gaming Account'}
+                                </h4>
+                                <p className="text-gray-300 text-sm mt-1">
+                                  {transaction.virtualAccountNo ? `VA: ${transaction.virtualAccountNo}` : 
+                                   transaction.description || 'Menunggu pembayaran'}
+                                </p>
+                                <div className="flex items-center justify-between mt-3">
+                                  <div className="flex items-center text-yellow-400 text-sm">
+                                    <Icon icon="mdi:bank" className="mr-1" />
+                                    {transaction.channel || 'Bank Transfer'}
+                                  </div>
+                                  <div className="text-purple-400 font-semibold">
+                                    Rp {parseInt(transaction.amount || 0).toLocaleString('id-ID')}
+                                  </div>
                                 </div>
+                                {transaction.expiredDate && (
+                                  <div className="text-xs text-gray-400 mt-2">
+                                    <Icon icon="mdi:timer-outline" className="mr-1 inline" />
+                                    Berlaku hingga: {new Date(transaction.expiredDate).toLocaleString('id-ID')}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
-                          <div className="mt-4 sm:mt-0 sm:ml-4">
+                          <div className="mt-4 sm:mt-0 sm:ml-4 flex flex-col items-end space-y-2">
                             <span className="inline-flex items-center bg-yellow-600/20 text-yellow-400 px-3 py-1 rounded-full text-sm font-medium border border-yellow-500/30">
                               <Icon icon="mdi:clock-outline" className="mr-1" />
-                              {transaction.status}
+                              {transaction.status === 'pending' ? 'Menunggu Bayar' : transaction.status}
                             </span>
+                            <div className="text-xs text-gray-400 flex items-center">
+                              <Icon icon="mdi:cursor-pointer" className="mr-1" />
+                              Klik untuk detail
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -324,6 +369,17 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+
+      {/* Payment Detail Modal */}
+      <PaymentDetailModal
+        isOpen={paymentDetailModal}
+        onClose={() => {
+          setPaymentDetailModal(false);
+          setSelectedTransaction(null);
+        }}
+        transaction={selectedTransaction}
+        onTransactionUpdate={handleTransactionUpdate}
+      />
     </div>
   );
 };

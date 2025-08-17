@@ -225,16 +225,13 @@ class ZelenkaAPI {
   // Get Steam games list (using proxy-aware makeRequest method)
   async getSteamGamesList() {
     try {
-      console.log('Trying to fetch Steam games...');
-      
+
       // Use the correct endpoint that works
       const response = await this.makeRequest('/steam/games');
-      console.log('Steam games API response:', response);
-      
+
       // Handle the actual API response format: { games: [array of game objects] }
       if (response && response.games && Array.isArray(response.games)) {
-        console.log('Found games array in response.games');
-        
+
         const gamesArray = response.games.map(game => ({
           value: game.app_id.toString(),
           label: game.title || game.abbr || `Game ${game.app_id}`,
@@ -254,10 +251,7 @@ class ZelenkaAPI {
           // Within the same group (popular or not), sort alphabetically
           return a.label.localeCompare(b.label);
         });
-        
-        console.log(`Successfully loaded ${sortedGames.length} Steam games from LZT Market API`);
-        console.log('First 5 games:', sortedGames.slice(0, 5));
-        
+
         return sortedGames;
       }
       
@@ -266,7 +260,7 @@ class ZelenkaAPI {
       
     } catch (error) {
       console.error('Error fetching Steam games:', error);
-      console.log('Using fallback games list');
+      
       return this.getPopularSteamGamesList();
     }
   }
@@ -520,3 +514,4 @@ class ZelenkaAPI {
 }
 
 export default ZelenkaAPI;
+

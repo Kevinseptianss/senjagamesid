@@ -42,13 +42,10 @@ class WinPayAPI {
   generateSignature(httpMethod, endpointUrl, hashedBody, timestamp) {
     // SNAP signature format: HTTPMethod:URL:AccessToken:HashedBody:Timestamp
     const stringToSign = `${httpMethod}:${endpointUrl}:${this.partnerId}:${hashedBody}:${timestamp}`;
-    
-    console.log('String to sign:', stringToSign);
-    
+
     // For WinPay SNAP, we use HMAC-SHA256 with partner ID as key
     const signature = CryptoJS.HmacSHA256(stringToSign, this.partnerId).toString(CryptoJS.enc.Base64);
-    
-    console.log('Generated signature:', signature);
+
     return signature;
   }
 
@@ -69,9 +66,6 @@ class WinPayAPI {
       'CHANNEL-ID': this.channelId
     };
 
-    console.log('Request headers:', headers);
-    console.log('Request body hash:', hashedBody);
-    
     return headers;
   }
 
@@ -96,26 +90,20 @@ class WinPayAPI {
 
     const headers = this.createHeaders(httpMethod, endpointUrl, body);
 
-    console.log('Payment request body:', JSON.stringify(body, null, 2));
-
     try {
       // Use demo mode if credentials are missing or demo mode is enabled
       if (this.demoMode || !this.privateKey || !this.clientSecret) {
-        console.log('🎭 Using WinPay Demo Mode - No real payment will be processed');
+        
         return this.simulateVirtualAccountResponse(body, paymentData);
       }
 
       // Real API call
-      console.log('Making request to:', `${this.baseURL}${endpointUrl}`);
-      
+
       const response = await fetch(`${this.baseURL}${endpointUrl}`, {
         method: httpMethod,
         headers: headers,
         body: JSON.stringify(body)
       });
-
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -133,7 +121,7 @@ class WinPayAPI {
       }
 
       const result = await response.json();
-      console.log('WinPay API Response:', result);
+      
       return result;
     } catch (error) {
       console.error('WinPay API Error:', error);
@@ -193,8 +181,7 @@ class WinPayAPI {
     
     // Format: [BankCode][NumericID][RandomNumber] - all digits only
     const vaNumber = `${bankCode}${numericId}${randomNumber}`;
-    
-    console.log('Generated VA Number:', vaNumber, 'for bank:', channel);
+
     return vaNumber;
   }
 
@@ -305,3 +292,4 @@ class WinPayAPI {
 }
 
 export default WinPayAPI;
+

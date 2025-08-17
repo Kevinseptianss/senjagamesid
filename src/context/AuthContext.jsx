@@ -23,16 +23,9 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('AuthProvider: Setting up auth state listener');
-    console.log('Auth instance:', auth);
-    console.log('Firebase config check:', {
-      apiKey: import.meta.env.VITE_FIREBASE_API_KEY ? 'Present' : 'Missing',
-      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ? 'Present' : 'Missing',
-      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ? 'Present' : 'Missing'
-    });
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log('Auth state changed:', firebaseUser);
+      
       if (firebaseUser) {
         try {
           // Get additional user data from Firestore
@@ -63,7 +56,7 @@ export const AuthProvider = ({ children }) => {
           } else {
             // User exists in Firebase Auth but not in Firestore
             // Create a basic profile (for existing users who signed up before this update)
-            console.log('Creating missing Firestore profile for existing user');
+            
             const basicProfile = {
               fullName: firebaseUser.displayName || '',
               email: firebaseUser.email,
@@ -109,11 +102,10 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = async (email, password, fullName) => {
     try {
-      console.log('Attempting to create user with email:', email);
+      
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      console.log('User created successfully:', user.uid);
-      
+
       // Save additional user data to Firestore
       try {
         await setDoc(doc(db, 'users', user.uid), {
@@ -182,7 +174,7 @@ export const AuthProvider = ({ children }) => {
             locale: navigator.language
           }
         });
-        console.log('Complete user profile saved to Firestore');
+        
       } catch (firestoreError) {
         console.error('Error saving to Firestore (but user was created):', firestoreError);
         // Don't throw here - user was successfully created
@@ -201,9 +193,9 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (email, password) => {
     try {
-      console.log('Attempting to sign in with email:', email);
+      
       const result = await signInWithEmailAndPassword(auth, email, password);
-      console.log('Sign in successful:', result.user.uid);
+      
       return result;
     } catch (error) {
       console.error('Sign in error details:', {
@@ -217,7 +209,7 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      console.log('Sign out successful');
+      
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;
@@ -243,8 +235,7 @@ export const AuthProvider = ({ children }) => {
         displayName: fullName,
         updatedAt: new Date().toISOString()
       }));
-      
-      console.log('User profile updated successfully');
+
     } catch (error) {
       console.error('Error updating user profile:', error);
       throw error;
@@ -266,3 +257,4 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+

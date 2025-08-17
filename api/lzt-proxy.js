@@ -17,12 +17,23 @@ export default async function handler(req, res) {
     
     // Build LZT Market API URL
     const baseURL = 'https://prod-api.lzt.market';
-    const apiURL = new URL(endpoint, baseURL);
+    let apiURL;
+    
+    // Handle specific Steam endpoints
+    if (endpoint === 'steam/params') {
+      apiURL = new URL('steam/params', baseURL);
+    } else if (endpoint === 'steam/games') {
+      apiURL = new URL('steam/games', baseURL);
+    } else {
+      apiURL = new URL(endpoint, baseURL);
+    }
     
     // Add query parameters
     Object.entries(params).forEach(([key, value]) => {
       if (value) apiURL.searchParams.append(key, value);
     });
+
+    console.log('LZT API Request:', apiURL.toString());
 
     // Forward the request to LZT Market API
     const response = await fetch(apiURL.toString(), {
@@ -36,6 +47,8 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+    console.log('LZT API Response status:', response.status);
+    console.log('LZT API Response data:', data);
     
     res.status(response.status).json(data);
   } catch (error) {

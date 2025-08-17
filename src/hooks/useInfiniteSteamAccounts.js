@@ -38,7 +38,7 @@ export const useInfiniteSteamAccounts = (filters = {}) => {
 
     // Use the original price from API as-is (no conversion needed)
     const originalPrice = typeof apiAccount.price === 'number' ? apiAccount.price : parseFloat(apiAccount.price) || 0;
-    
+
     return {
       id: apiAccount.item_id || apiAccount.id,
       item_id: apiAccount.item_id,
@@ -123,19 +123,25 @@ export const useInfiniteSteamAccounts = (filters = {}) => {
         { ...defaultSteamFilters, ...filters, page: 1 };
       
       const response = await api.getSteamAccounts(steamParams);
-      
+
       if (response && response.items) {
-        const transformedAccounts = response.items.map(transformAccountData);
         
+        const transformedAccounts = response.items.map(transformAccountData);
+
         // Filter accounts that have games
         const accountsWithGames = transformedAccounts.filter(account => {
           const hasGames = (account.steam_full_games?.list && Object.keys(account.steam_full_games.list).length > 0) ||
                            (account.games && Array.isArray(account.games) && account.games.length > 0) ||
                            (account.steam_game_count && account.steam_game_count > 0) ||
                            (account.gameCount && account.gameCount > 0);
+          
+          if (!hasGames) {
+            
+          }
+          
           return hasGames;
         });
-        
+
         setAccounts(accountsWithGames);
         
         // Check if there are more pages
@@ -232,3 +238,4 @@ export const useInfiniteSteamAccounts = (filters = {}) => {
     refresh: loadInitialAccounts
   };
 };
+

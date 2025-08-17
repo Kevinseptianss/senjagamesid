@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useAuth } from '../context/AuthContext';
 import WinPayAPI from '../services/winpayAPI';
+import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 const PaymentModal = ({ isOpen, onClose, item, quantity = 1 }) => {
   const { user } = useAuth();
@@ -39,13 +41,6 @@ const PaymentModal = ({ isOpen, onClose, item, quantity = 1 }) => {
   const priceIDR = convertToIDR(priceUSD);
   const totalAmountIDR = priceIDR * quantity;
 
-  console.log('Price conversion:', {
-    originalUSD: priceUSD,
-    convertedIDR: priceIDR,
-    totalIDR: totalAmountIDR,
-    exchangeRate: import.meta.env.VITE_USD_TO_IDR_RATE
-  });
-
   const supportedChannels = winpay.getSupportedChannels();
 
   const handlePayment = async () => {
@@ -69,12 +64,10 @@ const PaymentModal = ({ isOpen, onClose, item, quantity = 1 }) => {
       };
 
       const result = await winpay.createVirtualAccount(paymentData);
-      
-      console.log('Payment API Result:', result);
-      
+
       // Check for success codes: '2000000' (demo) or '2002700' (real API)
       if (result.responseCode === '2000000' || result.responseCode === '2002700') {
-        setPaymentResult({
+        const transactionData = {
           success: true,
           virtualAccountNo: result.virtualAccountData.virtualAccountNumber || result.virtualAccountData.virtualAccountNo,
           virtualAccountName: result.virtualAccountData.virtualAccountName,
@@ -85,7 +78,39 @@ const PaymentModal = ({ isOpen, onClose, item, quantity = 1 }) => {
           channel: selectedChannel,
           instructions: result.virtualAccountData.additionalInfo?.instructions,
           bankCode: result.virtualAccountData.additionalInfo?.bankCode
-        });
+        };
+
+        setPaymentResult(transactionData);
+
+        // Add transaction to ongoing transactions in user's profile
+        if (user?.uid) {
+          try {
+            const userRef = doc(db, 'users', user.uid);
+            const ongoingTransaction = {
+              trxId: transactionData.trxId,
+              virtualAccountNo: transactionData.virtualAccountNo,
+              virtualAccountName: transactionData.virtualAccountName,
+              amount: transactionData.amount,
+              channel: selectedChannel,
+              status: 'pending',
+              createdAt: new Date().toISOString(),
+              expiredDate: transactionData.expiredDate,
+              item: {
+                id: item.id,
+                title: item.title || 'Gaming Account',
+                price: priceUSD,
+                quantity: quantity
+              }
+            };
+
+            await updateDoc(userRef, {
+              ongoingTransactions: arrayUnion(ongoingTransaction)
+            });
+
+          } catch (error) {
+            console.error('Error adding transaction to ongoing list:', error);
+          }
+        }
       } else {
         throw new Error(result.responseMessage || 'Payment creation failed');
       }
@@ -381,3 +406,4 @@ const PaymentModal = ({ isOpen, onClose, item, quantity = 1 }) => {
 };
 
 export default PaymentModal;
+

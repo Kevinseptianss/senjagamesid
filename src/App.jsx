@@ -4,10 +4,16 @@ import { Icon } from '@iconify/react'
 import { useZelenkaAccounts } from './hooks/useZelenkaAccounts'
 import { useAuth } from './context/AuthContext'
 import { useCart } from './context/CartContext'
-import SteamPage from './components/SteamPage'
+import FortnitePage from './components/FortnitePage'
 import SteamFilters from './components/SteamFilters'
+import FortniteFilters from './components/FortniteFilters'
+import MiHoyoFilters from './components/MiHoyoFilters'
+import RiotFilters from './components/RiotFilters'
 import SteamAccountsContainer from './components/SteamAccountsContainer'
 import InfiniteSteamAccountsContainer from './components/InfiniteSteamAccountsContainer'
+import InfiniteFortniteAccountsContainer from './components/InfiniteFortniteAccountsContainer'
+import InfiniteMiHoyoAccountsContainer from './components/InfiniteMiHoyoAccountsContainer'
+import InfiniteRiotAccountsContainer from './components/InfiniteRiotAccountsContainer'
 import AccountDetailPage from './components/AccountDetailPage'
 import Login from './components/Login'
 import Signup from './components/Signup'
@@ -35,9 +41,12 @@ import warThunderIcon from './assets/war_thunder_vector__svg__by_erratic_fox_d70
 import miHoYoIcon from './assets/68258c779c36b-miHoYo.svg'
 
 function MainPage() {
-  const [showSteamPage, setShowSteamPage] = useState(false)
   const [lztCategories, setLztCategories] = useState([])
   const [steamFilters, setSteamFilters] = useState({}) // State for Steam filters
+  const [fortniteFilters, setFortniteFilters] = useState({}) // State for Fortnite filters
+  const [mihoyoFilters, setMihoyoFilters] = useState({}) // State for MiHoYo filters
+  const [riotFilters, setRiotFilters] = useState({}) // State for Riot filters
+  const [currentGameType, setCurrentGameType] = useState('Steam') // Track current game type
   const [cartModalOpen, setCartModalOpen] = useState(false)
   const [paymentModal, setPaymentModal] = useState({ isOpen: false, item: null })
   const [nameUpdate, setNameUpdate] = useState({ show: false, value: '' })
@@ -169,33 +178,36 @@ function MainPage() {
 
   // Create categories array from LZT data with fallback to static categories
   const categories = lztCategories.length > 0 
-    ? lztCategories
-        .filter(cat => cat.display_in_list === 1) // Only show categories that should be displayed
-        .map(cat => ({
-          name: cat.category_title,
-          categoryName: cat.category_name,
-          icon: getCategoryIcon(cat.category_name, cat.category_title),
-          color: getCategoryColor(cat.category_name),
-          isLocal: isLocalIcon(getCategoryIcon(cat.category_name, cat.category_title)),
-          categoryId: cat.category_id,
-          categoryUrl: cat.category_url
-        }))
-        // Remove duplicates based on categoryName
-        .filter((category, index, self) => 
-          index === self.findIndex(c => c.categoryName === category.categoryName)
-        )
-        .sort((a, b) => {
-          // Sort by category_order if available, otherwise alphabetically
-          const aOrder = lztCategories.find(c => c.category_name === a.categoryName)?.category_order || 999
-          const bOrder = lztCategories.find(c => c.category_name === b.categoryName)?.category_order || 999
-          return aOrder - bOrder
-        })
+    ? [
+        // Always include our core categories first
+        { name: 'Steam', icon: steamIcon, color: '#1B2838', isLocal: true },
+        { name: 'Fortnite', icon: fortniteIcon, color: '#313131', isLocal: true },
+        { name: 'miHoYo', icon: miHoYoIcon, color: '#FFB800', isLocal: true },
+        { name: 'Riot', icon: 'simple-icons:riotgames', color: '#FF4654', isLocal: false },
+        // Then add LZT categories that don't conflict
+        ...lztCategories
+          .filter(cat => cat.display_in_list === 1) // Only show categories that should be displayed
+          .filter(cat => !['steam', 'fortnite', 'mihoyo', 'riot'].includes(cat.category_name.toLowerCase())) // Exclude our core categories
+          .map(cat => ({
+            name: cat.category_title,
+            categoryName: cat.category_name,
+            icon: getCategoryIcon(cat.category_name, cat.category_title),
+            color: getCategoryColor(cat.category_name),
+            isLocal: isLocalIcon(getCategoryIcon(cat.category_name, cat.category_title)),
+            categoryId: cat.category_id,
+            categoryUrl: cat.category_url
+          }))
+          // Remove duplicates based on categoryName
+          .filter((category, index, self) => 
+            index === self.findIndex(c => c.categoryName === category.categoryName)
+          )
+      ]
     : [
         // Fallback static categories if LZT API fails
         { name: 'Steam', icon: steamIcon, color: '#1B2838', isLocal: true },
         { name: 'Fortnite', icon: fortniteIcon, color: '#313131', isLocal: true },
         { name: 'miHoYo', icon: miHoYoIcon, color: '#FFB800', isLocal: true },
-        { name: 'Valorant', icon: 'simple-icons:riotgames', color: '#FF4654', isLocal: false },
+        { name: 'Riot', icon: 'simple-icons:riotgames', color: '#FF4654', isLocal: false },
         { name: 'Telegram', icon: 'logos:telegram', color: '#0088CC', isLocal: false },
         { name: 'Supercell', icon: supercellIcon, color: '#FFD700', isLocal: true },
         { name: 'EA', icon: 'simple-icons:ea', color: '#FF6C37', isLocal: false },
@@ -217,9 +229,42 @@ function MainPage() {
         { name: 'Roblox', icon: 'simple-icons:roblox', color: '#E13838', isLocal: false }
       ]
 
-  // Show Steam page if enabled
-  if (showSteamPage) {
-    return <SteamPage onBack={() => setShowSteamPage(false)} />
+  // Helper function to check if category is MiHoYo-related
+  const isMiHoyoCategory = (categoryName) => {
+    return categoryName === 'miHoYo' || categoryName === 'mihoyo' || 
+           (categoryName && categoryName.toLowerCase().includes('mihoyo'))
+  }
+
+  // Helper function to check if category is Riot-related
+  const isRiotCategory = (categoryName) => {
+    return categoryName === 'Riot' || categoryName === 'riot' || 
+           categoryName === 'Valorant' || categoryName === 'valorant' ||
+           (categoryName && categoryName.toLowerCase().includes('riot'))
+  }
+
+  // Custom category change handler to handle special pages
+  const handleCategoryClick = (categoryName) => {
+    if (categoryName === 'Steam') {
+      // Stay on main page but set Steam mode
+      setCurrentGameType('Steam')
+      changeCategory('Steam') // This will set the filters and context
+    } else if (categoryName === 'Fortnite') {
+      // Stay on main page but set Fortnite mode
+      setCurrentGameType('Fortnite')
+      changeCategory('Fortnite') // This will set the filters and context
+    } else if (isMiHoyoCategory(categoryName)) {
+      // Stay on main page but set MiHoYo mode
+      setCurrentGameType('miHoYo')
+      changeCategory('miHoYo') // This will set the filters and context
+    } else if (isRiotCategory(categoryName)) {
+      // Stay on main page but set Riot mode
+      setCurrentGameType('Riot')
+      changeCategory('Riot') // This will set the filters and context
+    } else {
+      // For other categories, use the original changeCategory function
+      setCurrentGameType('Other')
+      changeCategory(categoryName)
+    }
   }
 
   return (
@@ -351,7 +396,7 @@ function MainPage() {
               return (
                 <button
                   key={`${category.categoryName || category.name}-${index}`}
-                  onClick={() => changeCategory(category.name)}
+                  onClick={() => handleCategoryClick(category.name)}
                   className={`relative group flex items-center justify-center p-4 rounded-lg transition-all duration-300 hover:scale-105 ${
                     selectedCategory === category.name
                       ? 'bg-gray-800 border border-purple-500'
@@ -403,8 +448,8 @@ function MainPage() {
           <h3 className="text-3xl font-bold text-purple-400">
             {selectedCategory} Accounts
           </h3>
-          {/* Only show account count and refresh for non-Steam categories */}
-          {selectedCategory !== 'Steam' && (
+          {/* Only show account count and refresh for non-Steam, non-Fortnite, non-MiHoYo, and non-Riot categories */}
+          {selectedCategory !== 'Steam' && selectedCategory !== 'Fortnite' && !isMiHoyoCategory(selectedCategory) && !isRiotCategory(selectedCategory) && (
             <div className="flex items-center space-x-4">
               <p className="text-gray-400">{filteredAccounts.length} accounts found</p>
               <button 
@@ -429,8 +474,41 @@ function MainPage() {
           />
         )}
 
-        {/* Error State - Only for non-Steam categories */}
-        {selectedCategory !== 'Steam' && error && (
+        {/* Fortnite Filters - Show only when Fortnite category is selected */}
+        {selectedCategory === 'Fortnite' && (
+          <FortniteFilters 
+            onFiltersChange={(filters) => {
+              // Update local state for Fortnite accounts filtering
+              setFortniteFilters(filters);
+            }} 
+            loading={loading} 
+          />
+        )}
+
+        {/* MiHoYo Filters - Show only when miHoYo category is selected */}
+        {isMiHoyoCategory(selectedCategory) && (
+          <MiHoyoFilters 
+            onFilterChange={(filters) => {
+              // Update local state for MiHoYo accounts filtering
+              setMihoyoFilters(filters);
+            }} 
+            loading={loading} 
+          />
+        )}
+
+        {/* Riot Filters - Show only when Riot category is selected */}
+        {isRiotCategory(selectedCategory) && (
+          <RiotFilters 
+            onFilterChange={(filters) => {
+              // Update local state for Riot accounts filtering
+              setRiotFilters(filters);
+            }} 
+            loading={loading} 
+          />
+        )}
+
+        {/* Error State - Only for non-Steam, non-Fortnite, non-MiHoYo, and non-Riot categories */}
+        {selectedCategory !== 'Steam' && selectedCategory !== 'Fortnite' && !isMiHoyoCategory(selectedCategory) && !isRiotCategory(selectedCategory) && error && (
           <div className="bg-red-900 border border-red-700 text-red-100 px-4 py-3 rounded-lg mb-6">
             <p className="font-medium">Error loading accounts:</p>
             <p className="text-sm mt-1">{error}</p>
@@ -443,8 +521,8 @@ function MainPage() {
           </div>
         )}
 
-        {/* Loading State - Only for non-Steam categories */}
-        {selectedCategory !== 'Steam' && loading && (
+        {/* Loading State - Only for non-Steam, non-Fortnite, and non-MiHoYo categories */}
+        {selectedCategory !== 'Steam' && selectedCategory !== 'Fortnite' && !isMiHoyoCategory(selectedCategory) && loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, index) => (
               <div key={index} className="bg-gray-900 rounded-lg shadow-lg border border-gray-700 p-6 animate-pulse">
@@ -467,6 +545,18 @@ function MainPage() {
         {selectedCategory === 'Steam' ? (
           <InfiniteSteamAccountsContainer 
             filters={steamFilters}
+          />
+        ) : selectedCategory === 'Fortnite' ? (
+          <InfiniteFortniteAccountsContainer 
+            filters={fortniteFilters}
+          />
+        ) : isMiHoyoCategory(selectedCategory) ? (
+          <InfiniteMiHoyoAccountsContainer 
+            filters={mihoyoFilters}
+          />
+        ) : isRiotCategory(selectedCategory) ? (
+          <InfiniteRiotAccountsContainer 
+            filters={riotFilters}
           />
         ) : (
           !loading && !error && (
