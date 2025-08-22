@@ -1,7 +1,7 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { initializeApp } from 'firebase/app'
+import { getAuth } from 'firebase/auth'
+import { getFirestore } from 'firebase/firestore'
+import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -10,27 +10,27 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
+}
 
 // Check if all required config is present
-const requiredFields = ['apiKey', 'authDomain', 'projectId', 'appId'];
-const missingFields = requiredFields.filter(field => !firebaseConfig[field]);
+const requiredFields = ['apiKey', 'authDomain', 'projectId', 'appId']
+const missingFields = requiredFields.filter(field => !firebaseConfig[field])
 
 if (missingFields.length > 0) {
-  console.error('Missing Firebase configuration fields:', missingFields);
-  console.error('Please check your .env file and ensure all VITE_FIREBASE_* variables are set');
+  console.error('Missing Firebase configuration fields:', missingFields)
+  console.error('Please check your .env file and ensure all VITE_FIREBASE_* variables are set')
 }
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig)
 
 // Initialize Firebase Authentication and get a reference to the service
-export const auth = getAuth(app);
+export const auth = getAuth(app)
 
 // Initialize Cloud Firestore and get a reference to the service
-export const db = getFirestore(app);
+export const db = getFirestore(app)
 
 // Initialize Cloud Storage and get a reference to the service
-export const storage = getStorage(app);
+export const storage = getStorage(app)
 
-export default app;
+export default app

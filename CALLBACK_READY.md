@@ -3,6 +3,7 @@
 ## ✅ Your Callback Server is Running!
 
 ### 🌐 Callback URLs
+
 **For WinPay Dashboard Configuration:**
 
 - **Local Development (testing)**: `http://localhost:3002/api/winpay/v1.0/transfer-va/payment`
@@ -19,16 +20,19 @@
 ### 🧪 Test Your Callback
 
 #### Health Check
+
 ```bash
 curl http://localhost:3002/health
 ```
 
 #### Test Endpoint
+
 ```bash
 curl -X POST http://localhost:3002/api/winpay/test -H "Content-Type: application/json" -d '{"test": "data"}'
 ```
 
 #### Simulate WinPay Callback
+
 ```bash
 curl -X POST http://localhost:3002/api/winpay/v1.0/transfer-va/payment \
   -H "Content-Type: application/json" \
@@ -59,12 +63,14 @@ curl -X POST http://localhost:3002/api/winpay/v1.0/transfer-va/payment \
 ### 🚀 For Production Deployment
 
 #### Option 1: Using ngrok (for testing with real WinPay)
+
 1. Install ngrok: https://ngrok.com/download
 2. Run: `ngrok http 3002`
 3. Use the ngrok URL in WinPay dashboard: `https://abc123.ngrok.io/api/winpay/v1.0/transfer-va/payment`
 
 #### Option 2: Deploy to Cloud
-- **Vercel**: 
+
+- **Vercel**:
   ```bash
   npm install -g vercel
   vercel
@@ -76,6 +82,7 @@ curl -X POST http://localhost:3002/api/winpay/v1.0/transfer-va/payment \
 ### 🔧 Configuration
 
 Set these in your `.env` file or environment variables:
+
 ```env
 WINPAY_PARTNER_ID=fe515458-df5e-4ab6-9136-84b18e79f1e8
 WINPAY_CLIENT_SECRET=your_actual_secret_from_winpay
@@ -102,6 +109,7 @@ PORT=3002
 ### 📝 Server Logs
 
 Your callback server logs all incoming requests. Check the terminal where you ran `npm run dev:callback` to see:
+
 - Incoming callback data
 - Signature verification results
 - Processing status

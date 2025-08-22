@@ -3,6 +3,7 @@
 ## ✅ Pre-Deployment Checklist
 
 Your project is now **Vercel-ready** with:
+
 - ✅ Serverless API functions in `/api/winpay/`
 - ✅ Proper Vercel configuration in `vercel.json`
 - ✅ CORS headers configured
@@ -12,6 +13,7 @@ Your project is now **Vercel-ready** with:
 ## 🎯 Your Callback URLs (After Deployment)
 
 ### Production URLs
+
 - **WinPay Callback**: `https://your-app.vercel.app/api/winpay/payment`
 - **Health Check**: `https://your-app.vercel.app/api/winpay/health`
 
@@ -20,21 +22,25 @@ Your project is now **Vercel-ready** with:
 ### Option 1: Deploy via Vercel CLI (Recommended)
 
 1. **Install Vercel CLI**
+
    ```bash
    npm install -g vercel
    ```
 
 2. **Login to Vercel**
+
    ```bash
    vercel login
    ```
 
 3. **Deploy**
+
    ```bash
    vercel
    ```
 
 4. **Set Environment Variables**
+
    ```bash
    vercel env add WINPAY_PARTNER_ID
    vercel env add WINPAY_CLIENT_SECRET
@@ -54,6 +60,7 @@ Your project is now **Vercel-ready** with:
 ### Option 2: Deploy via GitHub (Automatic)
 
 1. **Push to GitHub**
+
    ```bash
    git add .
    git commit -m "Add WinPay callback for Vercel"
@@ -71,6 +78,7 @@ Your project is now **Vercel-ready** with:
 ## 🔧 Environment Variables Setup
 
 ### In Vercel Dashboard:
+
 1. Go to your project settings
 2. Navigate to "Environment Variables"
 3. Add these variables:
@@ -89,11 +97,13 @@ VITE_FIREBASE_APP_ID = your_app_id
 ## 🧪 Testing Your Deployed Callback
 
 ### Health Check
+
 ```bash
 curl https://your-app.vercel.app/api/winpay/health
 ```
 
 ### Test Callback
+
 ```bash
 curl -X POST https://your-app.vercel.app/api/winpay/payment \
   -H "Content-Type: application/json" \
@@ -132,12 +142,14 @@ your-project/
 ## 🔍 Monitoring & Debugging
 
 ### View Logs
+
 1. Go to Vercel dashboard
 2. Select your project
 3. Click on "Functions" tab
 4. View logs for `/api/winpay/payment`
 
 ### Check Function Status
+
 - **Health Check**: `https://your-app.vercel.app/api/winpay/health`
 - **Function Logs**: Available in Vercel dashboard
 
@@ -173,6 +185,7 @@ your-project/
 ## 🎉 Success Indicators
 
 ✅ **Deployment successful** when:
+
 - Health check returns 200 OK
 - Vercel dashboard shows function is active
 - WinPay can reach your callback URL

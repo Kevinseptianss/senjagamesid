@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react'
 import { Icon } from '@iconify/react'
-import SearchableGameDropdown from './SearchableGameDropdown'
+import { useEffect, useMemo, useState } from 'react'
+import useRiotCategoryData from '../hooks/useRiotCategoryData'
 import zelenkaAPI from '../services/zelenkaAPI'
+import MultiSelectDropdown from './ui/MultiSelectDropdown'
 
 // Popular Riot game searches
 const popularSearches = [
@@ -11,795 +12,762 @@ const popularSearches = [
   { value: 'tft', label: 'Teamfight Tactics' }
 ]
 
-// Regions list for fallback
-const regionsList = [
-  { value: 'na', label: 'North America' },
-  { value: 'eu', label: 'Europe' },
-  { value: 'ap', label: 'Asia Pacific' },
-  { value: 'kr', label: 'Korea' },
-  { value: 'br', label: 'Brazil' },
-  { value: 'lan', label: 'Latin America North' },
-  { value: 'las', label: 'Latin America South' },
-  { value: 'oce', label: 'Oceania' },
-  { value: 'tr', label: 'Turkey' },
-  { value: 'ru', label: 'Russia' }
+// Valorant ranks - matching example.html values
+const valorantRanks = [
+  { value: '3', label: 'Iron 1' },
+  { value: '4', label: 'Iron 2' },
+  { value: '5', label: 'Iron 3' },
+  { value: '6', label: 'Bronze 1' },
+  { value: '7', label: 'Bronze 2' },
+  { value: '8', label: 'Bronze 3' },
+  { value: '9', label: 'Silver 1' },
+  { value: '10', label: 'Silver 2' },
+  { value: '11', label: 'Silver 3' },
+  { value: '12', label: 'Gold 1' },
+  { value: '13', label: 'Gold 2' },
+  { value: '14', label: 'Gold 3' },
+  { value: '15', label: 'Platinum 1' },
+  { value: '16', label: 'Platinum 2' },
+  { value: '17', label: 'Platinum 3' },
+  { value: '18', label: 'Diamond 1' },
+  { value: '19', label: 'Diamond 2' },
+  { value: '20', label: 'Diamond 3' },
+  { value: '21', label: 'Ascendant 1' },
+  { value: '22', label: 'Ascendant 2' },
+  { value: '23', label: 'Ascendant 3' },
+  { value: '24', label: 'Immortal 1' },
+  { value: '25', label: 'Immortal 2' },
+  { value: '26', label: 'Immortal 3' },
+  { value: '27', label: 'Radiant' }
 ]
 
-// Inventory games
-const inventoryGames = [
-  { value: 'valorant', label: 'Valorant Skins' },
-  { value: 'lol', label: 'LoL Skins' },
-  { value: 'lor', label: 'LoR Cards' },
-  { value: 'tft', label: 'TFT Little Legends' }
+// Account origin options
+const originOptions = [
+  { value: 'brute', label: 'Brute' },
+  { value: 'phishing', label: 'Phishing' },
+  { value: 'stealer', label: 'Stealer' },
+  { value: 'personal', label: 'Personal' },
+  { value: 'resale', label: 'Resale' },
+  { value: 'autoreg', label: 'Autoreg' },
+  { value: 'dummy', label: 'Dummy' }
 ]
 
-// Quick game filters for UI
-const quickGameFilters = [
-  { value: 'valorant', label: 'Valorant' },
-  { value: 'lol', label: 'League of Legends' },
-  { value: 'lor', label: 'Legends of Runeterra' },
-  { value: 'tft', label: 'Teamfight Tactics' }
-]
-
-// Warranty options
-const warrantyOptions = [
-  { value: 'yes', label: 'With warranty' },
-  { value: 'no', label: 'Without warranty' }
-]
-
-// Countries list (focused on Riot Games regions)
-const countries = [
-  { value: 'US', label: 'United States' },
-  { value: 'CA', label: 'Canada' },
+// Valorant regions - matching example.html
+const valorantRegions = [
+  { value: 'NA', label: 'North America' },
+  { value: 'LA', label: 'Latin America' },
   { value: 'BR', label: 'Brazil' },
-  { value: 'MX', label: 'Mexico' },
-  { value: 'AR', label: 'Argentina' },
-  { value: 'CL', label: 'Chile' },
-  { value: 'GB', label: 'United Kingdom' },
-  { value: 'DE', label: 'Germany' },
-  { value: 'FR', label: 'France' },
-  { value: 'ES', label: 'Spain' },
-  { value: 'IT', label: 'Italy' },
-  { value: 'PL', label: 'Poland' },
-  { value: 'TR', label: 'Turkey' },
-  { value: 'RU', label: 'Russia' },
-  { value: 'KR', label: 'South Korea' },
-  { value: 'JP', label: 'Japan' },
-  { value: 'CN', label: 'China' },
-  { value: 'TW', label: 'Taiwan' },
-  { value: 'SG', label: 'Singapore' },
-  { value: 'TH', label: 'Thailand' },
-  { value: 'VN', label: 'Vietnam' },
-  { value: 'PH', label: 'Philippines' },
-  { value: 'AU', label: 'Australia' },
-  { value: 'NZ', label: 'New Zealand' }
+  { value: 'EU', label: 'Europe' },
+  { value: 'KR', label: 'Korea' },
+  { value: 'AP', label: 'Asia Pacific' }
 ]
 
-// Registration periods
-const registrationPeriods = [
-  { value: '1week', label: 'Last week' },
-  { value: '1month', label: 'Last month' },
-  { value: '3months', label: 'Last 3 months' },
-  { value: '6months', label: 'Last 6 months' },
-  { value: '1year', label: 'Last year' },
-  { value: '2years', label: 'Last 2 years' },
-  { value: '5years', label: 'Last 5 years' }
+// LoL regions - matching example.html
+const lolRegions = [
+  { value: 'la1', label: 'Latin America North' },
+  { value: 'eun1', label: 'Europe Nordic & East' },
+  { value: 'euw1', label: 'Europe West' },
+  { value: 'tr1', label: 'Turkey' },
+  { value: 'na1', label: 'North America' },
+  { value: 'ru', label: 'Russia' },
+  { value: 'vn2', label: 'Vietnam' },
+  { value: 'jp1', label: 'Japan' },
+  { value: 'br1', label: 'Brazil' },
+  { value: 'la2', label: 'Latin America South' },
+  { value: 'sg2', label: 'Singapore, Malaysia & Indonesia' },
+  { value: 'th2', label: 'Thailand' },
+  { value: 'oc1', label: 'Oceania' },
+  { value: 'ph2', label: 'Philippines' }
 ]
 
-const RiotFilters = ({ onFilterChange, loading }) => {
-  const [filters, setFilters] = useState({
-    // Pagination
-    page: 1,
-    
-    // Price filters
-    pmin: '',
-    pmax: '',
-    
-    // General filters
-    title: '',
-    order_by: 'price_to_up',
-    
-    // Game filters
-    game: [],
-    
-    // Riot General
-    riot_email_verified: '',
-    riot_phone_verified: '',
+// LoL ranks - matching example.html values
+const lolRanks = [
+  { value: 'IRON', label: 'Iron' },
+  { value: 'BRONZE', label: 'Bronze' },
+  { value: 'SILVER', label: 'Silver' },
+  { value: 'GOLD', label: 'Gold' },
+  { value: 'PLATINUM', label: 'Platinum' },
+  { value: 'EMERALD', label: 'Emerald' },
+  { value: 'DIAMOND', label: 'Diamond' },
+  { value: 'MASTER', label: 'Master' },
+  { value: 'GRANDMASTER', label: 'Grandmaster' },
+  { value: 'CHALLENGER', label: 'Challenger' }
+]
+
+// Country list with proper ISO codes
+const countries = [
+  { value: 'USA', label: 'United States' },
+  { value: 'CAN', label: 'Canada' },
+  { value: 'GBR', label: 'United Kingdom' },
+  { value: 'DEU', label: 'Germany' },
+  { value: 'FRA', label: 'France' },
+  { value: 'JPN', label: 'Japan' },
+  { value: 'KOR', label: 'Korea, South' },
+  { value: 'CHN', label: 'China' },
+  { value: 'IDN', label: 'Indonesia' },
+  { value: 'THA', label: 'Thailand' },
+  { value: 'VNM', label: 'Vietnam' },
+  { value: 'PHL', label: 'Philippines' },
+  { value: 'SGP', label: 'Singapore' },
+  { value: 'MYS', label: 'Malaysia' },
+  { value: 'BRA', label: 'Brazil' },
+  { value: 'MEX', label: 'Mexico' },
+  { value: 'ARG', label: 'Argentina' },
+  { value: 'CHL', label: 'Chile' },
+  { value: 'AUS', label: 'Australia' },
+  { value: 'NZL', label: 'New Zealand' },
+  { value: 'RUS', label: 'Russia' },
+  { value: 'TUR', label: 'Turkey' },
+  { value: 'IND', label: 'India' }
+]
+
+function RiotFilters({ filters = {}, setFilters = () => {}, onApplyFilters }) {
+  const [apiGames, setApiGames] = useState([])
+  const [expandedSections, setExpandedSections] = useState({
+    valorant: true,
+    lol: true
+  })
+
+  // Fetch Riot category data from LZT API
+  const {
+    weaponSkins,
+    agents,
+    buddies,
+    loading: categoryLoading,
+    error: categoryError
+  } = useRiotCategoryData()
+
+  // Provide safe defaults for filters
+  const safeFilters = {
+    email: '',
+    tel: '',
+    daybreak: '',
+    country: [],
     origin: [],
     not_origin: [],
-    
-    // Warranty
-    eg: '',
-    
-    // Country filters
-    country: [],
-    not_country: [],
-    
-    // Valorant specific
-    riot_valorant_level_min: '',
-    riot_valorant_level_max: '',
-    riot_valorant_rank: [],
-    riot_valorant_skin_count_min: '',
-    riot_valorant_skin_count_max: '',
-    riot_valorant_agent_count_min: '',
-    riot_valorant_agent_count_max: '',
-    riot_valorant_wallet_vp_min: '',
-    riot_valorant_wallet_vp_max: '',
-    riot_valorant_wallet_rp_min: '',
-    riot_valorant_wallet_rp_max: '',
-    riot_valorant_knife: '',
-    riot_valorant_inventory_value_min: '',
-    riot_valorant_inventory_value_max: '',
-    riot_valorant_region: [],
-    
-    // League of Legends specific
-    riot_lol_level_min: '',
-    riot_lol_level_max: '',
-    riot_lol_skins_count_min: '',
-    riot_lol_skins_count_max: '',
-    riot_lol_champions_count_min: '',
-    riot_lol_champions_count_max: '',
-    riot_lol_essence_min: '',
-    riot_lol_essence_max: '',
-    riot_lol_region: [],
-    
-    // Email type
-    email_type: []
-  })
+    game: [],
+    weaponSkin: [],
+    buddy: [],
+    agent: [],
+    valorant_smin: '',
+    valorant_smax: '',
+    vp_min: '',
+    vp_max: '',
+    inv_min: '',
+    inv_max: '',
+    knife: '',
+    valorant_region: [],
+    valorant_not_region: [],
+    valorant_level_min: '',
+    valorant_level_max: '',
+    amin: '',
+    amax: '',
+    rmin: '',
+    rmax: '',
+    last_rmin: '',
+    last_rmax: '',
+    previous_rmin: '',
+    previous_rmax: '',
+    lol_level_min: '',
+    lol_level_max: '',
+    win_rate_min: '',
+    win_rate_max: '',
+    lol_smin: '',
+    lol_smax: '',
+    champion_min: '',
+    champion_max: '',
+    lol_region: [],
+    lol_not_region: [],
+    pmin: '',
+    pmax: '',
+    order_by: 'bump',
+    ...filters
+  }
 
-  const [expandedSections, setExpandedSections] = useState({
-    cs2: false,
-    dota2: false,
-    rust: false
-  })
+  // Initialize filters with exact field names from example.html
+  useEffect(() => {
+    if (!safeFilters.email && typeof setFilters === 'function') {
+      setFilters(prev => ({
+        ...prev,
+        // General filters
+        email: '',
+        tel: '',
+        daybreak: '',
+        country: [],
+        origin: [],
+        not_origin: [],
+        game: [], // Add game filter
 
-  // State for API games
-  const [apiGames, setApiGames] = useState([])
-  const [gamesLoading, setGamesLoading] = useState(false)
-  const [gamesError, setGamesError] = useState(null)
+        // Valorant filters
+        weaponSkin: [],
+        buddy: [],
+        agent: [],
+        valorant_smin: '',
+        valorant_smax: '',
+        vp_min: '',
+        vp_max: '',
+        inv_min: '',
+        inv_max: '',
+        knife: '',
+        valorant_region: [],
+        valorant_not_region: [],
+        valorant_level_min: '',
+        valorant_level_max: '',
+        amin: '',
+        amax: '',
+        rmin: '',
+        rmax: '',
+        last_rmin: '',
+        last_rmax: '',
+        previous_rmin: '',
+        previous_rmax: '',
 
-  // Initialize ZelenkaAPI
-  const api = new zelenkaAPI()
+        // LoL filters
+        lol_level_min: '',
+        lol_level_max: '',
+        win_rate_min: '',
+        win_rate_max: '',
+        lol_smin: '',
+        lol_smax: '',
+        champion_min: '',
+        champion_max: '',
+        lol_region: [],
+        lol_not_region: [],
 
-  // Fetch games from API on component mount
+        // Price
+        pmin: '',
+        pmax: '',
+
+        // Sorting
+        order_by: 'bump'
+      }))
+    }
+  }, [safeFilters.email, setFilters])
+
+  // Fetch games from API
   useEffect(() => {
     const fetchGames = async () => {
-      setGamesLoading(true)
-      setGamesError(null)
-      
       try {
-        const gamesArray = await api.getRiotParams()
-        
-        if (gamesArray && Array.isArray(gamesArray) && gamesArray.length > 0) {
-          setApiGames(gamesArray)
+        const response = await zelenkaAPI.getGames()
+        if (response.data && Array.isArray(response.data)) {
+          setApiGames(response.data)
         }
       } catch (error) {
-        setGamesError('Failed to load games from API')
-      } finally {
-        setGamesLoading(false)
+        console.error('Error fetching games:', error)
       }
     }
-
     fetchGames()
   }, [])
 
-  // Memoized combined games list with proper fallback
+  // Combined games list - NO FALLBACK, show errors if API fails
   const combinedGames = useMemo(() => {
-    const combinedGames = new Map()
-
     // Helper function to safely add games with validation
-    const addGameSafely = (game) => {
+    const addGameSafely = (game, gameMap) => {
       if (game && game.value && game.label) {
         const safeGame = {
           value: game.value.toString(),
           label: game.label.toString(),
-          isPopular: game.isPopular || false // Preserve the popularity flag
-        };
-        combinedGames.set(safeGame.value, safeGame);
+          isPopular: game.isPopular || false
+        }
+        gameMap.set(safeGame.value, safeGame)
       }
-    };
-    
-    // Priority 1: Use API games if available (already sorted by popularity)
-    if (apiGames.length > 0) {
-      apiGames.forEach(addGameSafely);
-
-      // Convert Map back to array and preserve the original API order (which has popular games first)
-      return Array.from(combinedGames.values());
-    } else {
-      // Priority 2: Fallback to hardcoded games
-
-      // Add from popularSearches (removing appid property)
-      popularSearches.forEach(addGameSafely);
-      
-      // Add from regionsList
-      regionsList.forEach(addGameSafely);
-      
-      // Add from inventoryGames
-      inventoryGames.forEach(addGameSafely);
-      
-      // Convert Map back to array and sort alphabetically for fallback games
-      return Array.from(combinedGames.values()).sort((a, b) => {
-        const labelA = (a.label || '').toString().toLowerCase();
-        const labelB = (b.label || '').toString().toLowerCase();
-        return labelA.localeCompare(labelB);
-      });
     }
-  }, [apiGames]);
+
+    // Only use API games - NO FALLBACK
+    if (apiGames.length > 0) {
+      const combinedGames = new Map()
+      apiGames.forEach(game => addGameSafely(game, combinedGames))
+      return Array.from(combinedGames.values())
+    } else {
+      // No fallback - return empty array to show API error
+      console.log('⚠️ No API games available and no fallback used - this will show the API error')
+      return []
+    }
+  }, [apiGames])
 
   const handleFilterChange = (field, value) => {
-    const newFilters = { ...filters, [field]: value }
-    setFilters(newFilters)
+    if (typeof setFilters === 'function') {
+      const newFilters = { ...safeFilters, [field]: value }
+      setFilters(newFilters)
+    }
   }
 
   const handleApplyFilters = () => {
-    // Map the filter parameters to the proper Steam API parameter names
-    const apiParams = {
-      // Basic parameters - only include if they have actual values
-      ...(filters.pmin && { pmin: filters.pmin }),
-      ...(filters.pmax && { pmax: filters.pmax }),
-      ...(filters.title && { title: filters.title }),
-      
-      // Steam-specific parameters (these need to match the actual API parameter names)
-      // Convert game array to indexed format for API
-      ...(filters.game && filters.game.length > 0 && { game: filters.game }),
-      ...(filters.country && filters.country.length > 0 && { country: filters.country }),
-      ...(filters.not_country && filters.not_country.length > 0 && { not_country: filters.not_country }),
-      
-      // Other Steam filters - only include if they have actual values
-      ...(filters.eg && { eg: filters.eg }),
-      ...(filters.daybreak && { daybreak: filters.daybreak }),
-      ...(filters.mafile && { mafile: filters.mafile }),
-      ...(filters.limit && { limit: filters.limit }),
-      ...(filters.sb !== undefined && { sb: filters.sb }),
-      ...(filters.nsb !== undefined && { nsb: filters.nsb }),
-      
-      // Order
-      ...(filters.order_by && { order_by: filters.order_by }),
-      
-      // Page
-      page: filters.page || 1
-    };
-    
-    onFilterChange(apiParams);
+    if (onApplyFilters) {
+      onApplyFilters(safeFilters)
+    }
   }
 
-  const toggleSection = (section) => {
+  const toggleSection = section => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }))
   }
 
-  const handleSortChange = (sortValue) => {
-    handleFilterChange('order_by', sortValue)
-    const sortInput = document.getElementById('sortInput')
-    if (sortInput) {
-      sortInput.value = sortValue
-    }
-    
-    // Update active sort button
-    document.querySelectorAll('.button-sort').forEach(btn => btn.classList.remove('selected'))
-    const selectedButton = document.querySelector(`[data-value="${sortValue}"]`)
-    if (selectedButton) {
-      selectedButton.classList.add('selected')
-    }
-  }
-
-  const handlePopularSearchClick = (gameId, gameName) => {
-    // Toggle the game filter - if already selected, remove it; if not, add it (same as Quick Game Filter)
-    const currentGames = filters.game || [];
-    const newGames = currentGames.includes(gameId) 
-      ? currentGames.filter(g => g !== gameId)  // Remove if already selected
-      : [...currentGames, gameId];              // Add if not selected
-    
-    // Set the game filter
-    handleFilterChange('game', newGames)
-    
-    // Auto-apply the filter
-    setTimeout(() => handleApplyFilters(), 100)
-  }
-
-  const handleQuickGameFilter = (gameId, gameName) => {
-    // Toggle the game filter - if already selected, remove it; if not, add it
-    const currentGames = filters.game || [];
-    const newGames = currentGames.includes(gameId) 
-      ? currentGames.filter(g => g !== gameId)  // Remove if already selected
-      : [...currentGames, gameId];              // Add if not selected
-    
-    // Set the game filter
-    handleFilterChange('game', newGames)
-    
-    // Auto-apply the filter
-    setTimeout(() => handleApplyFilters(), 100)
-  }
-
-  const clearAllFilters = () => {
-    setFilters({
-      page: 1,
-      pmin: '',
-      pmax: '',
-      title: '',
-      order_by: 'pdate_to_up_upload',
-      game: [],
-      eg: '',
-      purchase_min: '',
-      purchase_max: '',
-      games_purchase_min: '',
-      games_purchase_max: '',
-      ingame_purchase_min: '',
-      ingame_purchase_max: '',
-      trans: false,
-      no_trans: false,
-      country: [],
-      not_country: [],
-      daybreak: '',
-      mafile: '',
-      limit: '',
-      sb: undefined,
-      nsb: undefined,
-      rust: false
-    })
-    
-    // Auto-apply to show all accounts
-    setTimeout(() => handleApplyFilters(), 100)
-  }
-
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 mb-6">
-      {/* Popular Game Searches */}
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-purple-400 mb-4">🔥 Popular Game Searches</h3>
-        <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
-          {popularSearches.map((game) => (
+    <div className='bg-gray-900 border border-gray-700 rounded-lg p-4 mb-6'>
+      {/* Popular Games Quick Filter */}
+      <div className='mb-6'>
+        <h3 className='text-lg font-semibold text-white mb-3 flex items-center'>
+          <Icon icon='material-symbols:filter-list' className='mr-2' />
+          Popular Riot Games
+        </h3>
+        <div className='grid grid-cols-2 sm:grid-cols-4 gap-2'>
+          {popularSearches.map(game => (
             <button
               key={game.value}
-              onClick={() => handlePopularSearchClick(game.value, game.label)}
-              className={`flex items-center justify-center space-x-2 p-3 rounded-lg text-sm transition-all duration-200 border ${
-                filters.game && filters.game.includes(game.value)
-                  ? 'bg-purple-600 hover:bg-purple-500 text-white border-purple-500'
-                  : 'bg-gray-800 hover:bg-purple-600 text-gray-300 hover:text-white border-gray-600 hover:border-purple-500'
+              type='button'
+              onClick={() => {
+                const currentGames = safeFilters.game || []
+                const isSelected = currentGames.includes(game.value)
+                const newGames = isSelected
+                  ? currentGames.filter(g => g !== game.value)
+                  : [...currentGames, game.value]
+                handleFilterChange('game', newGames)
+              }}
+              className={`flex items-center justify-center p-3 rounded-lg border transition-all ${
+                safeFilters.game && safeFilters.game.includes(game.value)
+                  ? 'bg-purple-600 border-purple-500 text-white'
+                  : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
               }`}
-              title={`Filter accounts with ${game.label}`}
             >
-              <img 
-                src={`https://nztcdn.com/steam/icon/${game.appid}.webp`}
-                alt={game.label}
-                className="w-5 h-5 rounded flex-shrink-0"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
-              />
-              <div 
-                className="w-5 h-5 bg-gray-700 rounded flex items-center justify-center text-gray-400 text-sm font-bold flex-shrink-0"
-                style={{display: 'none'}}
-              >
-                ?
-              </div>
-              <span className="font-medium text-xs truncate">{game.label}</span>
+              <span className='text-sm font-medium'>{game.label}</span>
             </button>
           ))}
         </div>
-        {filters.game && filters.game.length > 0 && (
-          <div className="mt-3 p-3 bg-purple-900 border border-purple-600 rounded-lg">
-            <p className="text-purple-200 text-sm">
-              <Icon icon="material-symbols:filter-alt" className="inline w-4 h-4 mr-1" />
-              Filtering accounts with: <strong>
-                {filters.game.map(gameId => {
-                  const game = popularSearches.find(g => g.value === gameId) || quickGameFilters.find(g => g.value === gameId);
-                  return game?.label || gameId;
-                }).join(', ')}
+        {safeFilters.game && safeFilters.game.length > 0 && (
+          <div className='mt-3 p-3 bg-purple-900 border border-purple-600 rounded-lg'>
+            <p className='text-purple-200 text-sm'>
+              <Icon icon='material-symbols:filter-alt' className='inline w-4 h-4 mr-1' />
+              Filtering accounts with:{' '}
+              <strong>
+                {safeFilters.game
+                  .map(gameId => {
+                    const game = popularSearches.find(g => g.value === gameId)
+                    return game?.label || gameId
+                  })
+                  .join(', ')}
               </strong>
             </p>
           </div>
         )}
       </div>
 
-      {/* Quick Game Filters */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-green-400">🎮 Quick Game Filters</h3>
-          <button
-            onClick={clearAllFilters}
-            className="bg-red-700 hover:bg-red-600 text-red-100 hover:text-white px-3 py-1 rounded-lg text-sm transition-colors border border-red-600 hover:border-red-500"
-          >
-            Clear All Filters
-          </button>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
-          {quickGameFilters.map((game) => (
-            <button
-              key={game.value}
-              onClick={() => handleQuickGameFilter(game.value, game.label)}
-              className={`flex items-center justify-center space-x-2 p-3 rounded-lg text-sm transition-all duration-200 border ${
-                filters.game && filters.game.includes(game.value)
-                  ? 'bg-green-600 hover:bg-green-500 text-white border-green-500'
-                  : 'bg-gray-800 hover:bg-green-600 text-gray-300 hover:text-white border-gray-600 hover:border-green-500'
-              }`}
-              title={`Filter accounts with ${game.label}`}
-            >
-              <img 
-                src={`https://nztcdn.com/steam/icon/${game.value}.webp`}
-                alt={game.label}
-                className="w-5 h-5 rounded flex-shrink-0"
-                onError={(e) => {
-                  e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iNCIgZmlsbD0iIzZCNzI4MCIvPgo8cGF0aCBkPSJNMTIgN0M5Ljc5IDcgOCA4Ljc5IDggMTFTOS43OSAxNSAxMiAxNSAxNiAxMy4yMSAxNiAxMSAxNC4yMSA3IDEyIDdaTTEyIDEzQzEwLjkgMTMgMTAgMTIuMSAxMCAxMUMxMCAxMC45IDEwIDEwIDEwIDEwSDE0QzE0IDEwIDEzIDEwIDEzIDEwQzEzIDEyLjEgMTIuMSAxMyAxMiAxM1oiIGZpbGw9IiM5Q0EzQUYiLz4KPHN2Zz4K'
-                }}
-              />
-              <span className="font-medium text-xs">{game.label}</span>
-            </button>
-          ))}
-        </div>
-        {filters.game && filters.game.length > 0 && (
-          <div className="mt-3 p-3 bg-green-900 border border-green-600 rounded-lg">
-            <p className="text-green-200 text-sm">
-              <Icon icon="material-symbols:filter-alt" className="inline w-4 h-4 mr-1" />
-              Filtering accounts with: <strong>{quickGameFilters.find(g => g.value === (filters.game && filters.game[0]))?.label || 'Selected Game'}</strong>
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Search Form */}
-      <form className="searchBarContainer">
-        <div className="filterContainer">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* First Column */}
-            <div className="filterColumn space-y-4">
-              {/* Games Selection - Dynamic API-powered Searchable Dropdown */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium flex items-center space-x-2">
-                  <span>Pilih Game yang ada di Dalam Akun</span>
-                  {gamesLoading && (
-                    <Icon icon="eos-icons:loading" className="text-purple-500 text-lg animate-spin" />
-                  )}
-                  {gamesError && (
-                    <Icon icon="mdi:alert-circle" className="text-red-500 text-lg" title={`Error: ${gamesError}`} />
-                  )}
-                </label>
-                
-                <SearchableGameDropdown
-                  selectedGames={filters.game}
-                  onGameChange={(newGames) => handleFilterChange('game', newGames)}
-                  gamesList={combinedGames}
-                  placeholder={gamesLoading ? "Loading games..." : "Cari dan pilih games..."}
-                  label=""
-                  disabled={gamesLoading}
-                />
-                
-                {gamesError && (
-                  <div className="text-xs text-red-400 mt-1">
-                    Failed to load games from API. Using fallback list.
-                  </div>
-                )}
-              </div>
-
-              {/* Warranty Duration */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Warranty Duration</label>
-                <select
-                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  value={filters.eg}
-                  onChange={(e) => handleFilterChange('eg', e.target.value)}
-                >
-                  <option value="">Select warranty</option>
-                  {warrantyOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Financial Filters */}
-              <div className="space-y-3">
-                <div className="splitFilter">
-                  <label className="text-gray-300 text-sm font-medium">Total $ spent</label>
-                  <div className="grid grid-cols-2 gap-2">
+      {/* Main Search Form - Exactly matching example.html structure */}
+      <form className='searchBarContainer'>
+        <div className='filterContainer'>
+          <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+            {/* COLUMN 1 - GENERAL FILTERS */}
+            <div className='filterColumn space-y-4'>
+              {/* With mail */}
+              <div className='space-y-2'>
+                <label className='text-gray-300 text-sm font-medium'>With mail</label>
+                <div className='grid grid-cols-3 gap-1'>
+                  <label className='flex items-center space-x-1'>
                     <input
-                      type="number"
-                      min="1"
-                      placeholder="From"
-                      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={filters.purchase_min}
-                      onChange={(e) => handleFilterChange('purchase_min', e.target.value)}
+                      type='radio'
+                      name='email'
+                      value=''
+                      className='text-purple-600 focus:ring-purple-500'
+                      checked={safeFilters.email === ''}
+                      onChange={e => handleFilterChange('email', e.target.value)}
                     />
+                    <span className='text-xs text-gray-300'>Any</span>
+                  </label>
+                  <label className='flex items-center space-x-1'>
                     <input
-                      type="number"
-                      min="1"
-                      placeholder="up to"
-                      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={filters.purchase_max}
-                      onChange={(e) => handleFilterChange('purchase_max', e.target.value)}
+                      type='radio'
+                      name='email'
+                      value='yes'
+                      className='text-purple-600 focus:ring-purple-500'
+                      checked={safeFilters.email === 'yes'}
+                      onChange={e => handleFilterChange('email', e.target.value)}
                     />
-                  </div>
+                    <span className='text-xs text-gray-300'>Yes</span>
+                  </label>
+                  <label className='flex items-center space-x-1'>
+                    <input
+                      type='radio'
+                      name='email'
+                      value='no'
+                      className='text-purple-600 focus:ring-purple-500'
+                      checked={safeFilters.email === 'no'}
+                      onChange={e => handleFilterChange('email', e.target.value)}
+                    />
+                    <span className='text-xs text-gray-300'>No</span>
+                  </label>
                 </div>
-
-                <div className="splitFilter">
-                  <label className="text-gray-300 text-sm font-medium">Total $ spent on games</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="From"
-                      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={filters.games_purchase_min}
-                      onChange={(e) => handleFilterChange('games_purchase_min', e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="up to"
-                      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={filters.games_purchase_max}
-                      onChange={(e) => handleFilterChange('games_purchase_max', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="splitFilter">
-                  <label className="text-gray-300 text-sm font-medium">Total $ in-game purchases</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="From"
-                      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={filters.ingame_purchase_min}
-                      onChange={(e) => handleFilterChange('ingame_purchase_min', e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="up to"
-                      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={filters.ingame_purchase_max}
-                      onChange={(e) => handleFilterChange('ingame_purchase_max', e.target.value)}
-                    />
-                  </div>
-                </div>
-
               </div>
 
-              {/* Transaction Checkboxes */}
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2 text-gray-300">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
-                    checked={filters.trans}
-                    onChange={(e) => handleFilterChange('trans', e.target.checked)}
-                  />
-                  <span>With Transactions</span>
-                </label>
-                <label className="flex items-center space-x-2 text-gray-300">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
-                    checked={filters.no_trans}
-                    onChange={(e) => handleFilterChange('no_trans', e.target.checked)}
-                  />
-                  <span>No Transactions</span>
-                </label>
-              </div>
-
-              {/* DLC Guide Button */}
-              <button
-                type="button"
-                className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors"
-              >
-                How to find a DLC ?
-              </button>
-            </div>
-
-            {/* Second Column */}
-            <div className="filterColumn space-y-4">
-              {/* Country Selection */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Country</label>
-                <select
-                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  value={(filters.country && filters.country[0]) || ''}
-                  onChange={(e) => handleFilterChange('country', e.target.value ? [e.target.value] : [])}
-                >
-                  <option value="">Select a country</option>
-                  {countries.map(country => (
-                    <option key={country.value} value={country.value} className="py-1">{country.label}</option>
-                  ))}
-                </select>
+              {/* Phone linked */}
+              <div className='space-y-2'>
+                <label className='text-gray-300 text-sm font-medium'>Phone linked</label>
+                <div className='grid grid-cols-3 gap-1'>
+                  <label className='flex items-center space-x-1'>
+                    <input
+                      type='radio'
+                      name='tel'
+                      value=''
+                      className='text-purple-600 focus:ring-purple-500'
+                      checked={safeFilters.tel === ''}
+                      onChange={e => handleFilterChange('tel', e.target.value)}
+                    />
+                    <span className='text-xs text-gray-300'>Any</span>
+                  </label>
+                  <label className='flex items-center space-x-1'>
+                    <input
+                      type='radio'
+                      name='tel'
+                      value='yes'
+                      className='text-purple-600 focus:ring-purple-500'
+                      checked={safeFilters.tel === 'yes'}
+                      onChange={e => handleFilterChange('tel', e.target.value)}
+                    />
+                    <span className='text-xs text-gray-300'>Yes</span>
+                  </label>
+                  <label className='flex items-center space-x-1'>
+                    <input
+                      type='radio'
+                      name='tel'
+                      value='no'
+                      className='text-purple-600 focus:ring-purple-500'
+                      checked={safeFilters.tel === 'no'}
+                      onChange={e => handleFilterChange('tel', e.target.value)}
+                    />
+                    <span className='text-xs text-gray-300'>No</span>
+                  </label>
+                </div>
               </div>
 
               {/* Days Inactive */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Days Inactive</label>
+              <div className='space-y-2'>
                 <input
-                  type="number"
-                  placeholder="Days Inactive"
-                  className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  value={filters.daybreak}
-                  onChange={(e) => handleFilterChange('daybreak', e.target.value)}
+                  type='number'
+                  name='daybreak'
+                  min='50'
+                  placeholder='Days Inactive (Min 50)'
+                  className='w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                  value={safeFilters.daybreak}
+                  onChange={e => handleFilterChange('daybreak', e.target.value)}
                 />
               </div>
 
-              {/* SDA (.maFile) */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">SDA (.maFile)</label>
-                <div className="grid grid-cols-3 gap-1">
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="radio"
-                      name="mafile"
-                      value=""
-                      className="text-purple-600 focus:ring-purple-500"
-                      checked={filters.mafile === ''}
-                      onChange={(e) => handleFilterChange('mafile', e.target.value)}
-                    />
-                    <span className="text-xs text-gray-300">Any</span>
-                  </label>
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="radio"
-                      name="mafile"
-                      value="yes"
-                      className="text-purple-600 focus:ring-purple-500"
-                      checked={filters.mafile === 'yes'}
-                      onChange={(e) => handleFilterChange('mafile', e.target.value)}
-                    />
-                    <span className="text-xs text-gray-300">Yes</span>
-                  </label>
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="radio"
-                      name="mafile"
-                      value="no"
-                      className="text-purple-600 focus:ring-purple-500"
-                      checked={filters.mafile === 'no'}
-                      onChange={(e) => handleFilterChange('mafile', e.target.value)}
-                    />
-                    <span className="text-xs text-gray-300">No</span>
-                  </label>
-                </div>
+              {/* Country */}
+              <div className='space-y-2'>
+                <label className='text-gray-300 text-sm font-medium'>Country</label>
+                <MultiSelectDropdown
+                  options={countries}
+                  value={safeFilters.country || []}
+                  onChange={value => handleFilterChange('country', value)}
+                  placeholder='Select countries...'
+                  searchable={true}
+                />
               </div>
 
-              {/* Steam $5 Limit */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Steam $5 Limit</label>
-                <div className="grid grid-cols-3 gap-1">
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="radio"
-                      name="limit"
-                      value=""
-                      className="text-purple-600 focus:ring-purple-500"
-                      checked={filters.limit === ''}
-                      onChange={(e) => handleFilterChange('limit', e.target.value)}
-                    />
-                    <span className="text-xs text-gray-300">Any</span>
-                  </label>
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="radio"
-                      name="limit"
-                      value="yes"
-                      className="text-purple-600 focus:ring-purple-500"
-                      checked={filters.limit === 'yes'}
-                      onChange={(e) => handleFilterChange('limit', e.target.value)}
-                    />
-                    <span className="text-xs text-gray-300">Yes</span>
-                  </label>
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="radio"
-                      name="limit"
-                      value="no"
-                      className="text-purple-600 focus:ring-purple-500"
-                      checked={filters.limit === 'no'}
-                      onChange={(e) => handleFilterChange('limit', e.target.value)}
-                    />
-                    <span className="text-xs text-gray-300">No</span>
-                  </label>
-                </div>
+              {/* Account origin */}
+              <div className='space-y-2'>
+                <label className='text-gray-300 text-sm font-medium'>Account origin</label>
+                <MultiSelectDropdown
+                  options={originOptions}
+                  value={safeFilters.origin || []}
+                  onChange={value => handleFilterChange('origin', value)}
+                  placeholder='Select account origins...'
+                  searchable={true}
+                />
               </div>
 
-              {/* Trade Limit (Temporary) */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Trade Limit (Temporary)</label>
-                <div className="grid grid-cols-3 gap-1">
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="radio"
-                      name="trade_limit"
-                      value=""
-                      className="text-purple-600 focus:ring-purple-500"
-                      checked={filters.trade_limit === ''}
-                      onChange={(e) => handleFilterChange('trade_limit', e.target.value)}
-                    />
-                    <span className="text-xs text-gray-300">Any</span>
-                  </label>
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="radio"
-                      name="trade_limit"
-                      value="yes"
-                      className="text-purple-600 focus:ring-purple-500"
-                      checked={filters.trade_limit === 'yes'}
-                      onChange={(e) => handleFilterChange('trade_limit', e.target.value)}
-                    />
-                    <span className="text-xs text-gray-300">Yes</span>
-                  </label>
-                  <label className="flex items-center space-x-1">
-                    <input
-                      type="radio"
-                      name="trade_limit"
-                      value="no"
-                      className="text-purple-600 focus:ring-purple-500"
-                      checked={filters.trade_limit === 'no'}
-                      onChange={(e) => handleFilterChange('trade_limit', e.target.value)}
-                    />
-                    <span className="text-xs text-gray-300">No</span>
-                  </label>
-                </div>
+              {/* Exclude Account origin */}
+              <div className='space-y-2'>
+                <label className='text-gray-300 text-sm font-medium'>Exclude Account origin</label>
+                <MultiSelectDropdown
+                  options={originOptions}
+                  value={safeFilters.not_origin || []}
+                  onChange={value => handleFilterChange('not_origin', value)}
+                  placeholder='Select origins to exclude...'
+                  searchable={true}
+                />
               </div>
+            </div>
 
-              {/* Inventory Section */}
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <label className="text-gray-300 text-sm font-medium">Inventory</label>
+            {/* COLUMN 2 - VALORANT */}
+            <div className='filterColumn space-y-4'>
+              <div className='wrapper'>
+                <label className='text-white font-medium text-lg mb-4 block'>Valorant</label>
+
+                {/* Weapon Skins */}
+                <div className='mb-4'>
+                  <label className='text-gray-300 text-sm font-medium mb-2 block'>
+                    Weapon Skins
+                  </label>
+                  <MultiSelectDropdown
+                    options={weaponSkins}
+                    value={safeFilters.weaponSkin || []}
+                    onChange={values => handleFilterChange('weaponSkin', values)}
+                    placeholder='Select weapon skins...'
+                    loading={categoryLoading}
+                    error={categoryError}
+                    searchable={true}
+                  />
+                </div>
+
+                {/* Buddies */}
+                <div className='mb-4'>
+                  <label className='text-gray-300 text-sm font-medium mb-2 block'>Buddies</label>
+                  <MultiSelectDropdown
+                    options={buddies}
+                    value={safeFilters.buddy || []}
+                    onChange={values => handleFilterChange('buddy', values)}
+                    placeholder='Select buddies...'
+                    loading={categoryLoading}
+                    error={categoryError}
+                    searchable={true}
+                  />
+                </div>
+
+                {/* Agents */}
+                <div className='mb-4'>
+                  <label className='text-gray-300 text-sm font-medium mb-2 block'>Agents</label>
+                  <MultiSelectDropdown
+                    options={agents}
+                    value={safeFilters.agent || []}
+                    onChange={values => handleFilterChange('agent', values)}
+                    placeholder='Select agents...'
+                    loading={categoryLoading}
+                    error={categoryError}
+                    searchable={true}
+                  />
+                </div>
+
+                {/* Min/Max Skins */}
+                <div className='grid grid-cols-2 gap-2 mb-4'>
+                  <input
+                    type='number'
+                    name='valorant_smin'
+                    placeholder='Min Skins'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.valorant_smin}
+                    onChange={e => handleFilterChange('valorant_smin', e.target.value)}
+                  />
+                  <input
+                    type='number'
+                    name='valorant_smax'
+                    placeholder='up to'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.valorant_smax}
+                    onChange={e => handleFilterChange('valorant_smax', e.target.value)}
+                  />
+                </div>
+
+                {/* VP Range */}
+                <div className='grid grid-cols-2 gap-2 mb-4'>
+                  <input
+                    type='number'
+                    name='vp_min'
+                    placeholder='VP From'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.vp_min}
+                    onChange={e => handleFilterChange('vp_min', e.target.value)}
+                  />
+                  <input
+                    type='number'
+                    name='vp_max'
+                    placeholder='up to'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.vp_max}
+                    onChange={e => handleFilterChange('vp_max', e.target.value)}
+                  />
+                </div>
+
+                {/* Inventory Value */}
+                <div className='grid grid-cols-2 gap-2 mb-4'>
+                  <input
+                    type='number'
+                    name='inv_min'
+                    placeholder='Min Inv Value'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.inv_min}
+                    onChange={e => handleFilterChange('inv_min', e.target.value)}
+                  />
+                  <input
+                    type='number'
+                    name='inv_max'
+                    placeholder='up to'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.inv_max}
+                    onChange={e => handleFilterChange('inv_max', e.target.value)}
+                  />
+                </div>
+
+                {/* Has any knife */}
+                <label className='flex items-center space-x-2 mb-4'>
+                  <input
+                    type='checkbox'
+                    name='knife'
+                    value='true'
+                    className='text-purple-600 focus:ring-purple-500'
+                    checked={safeFilters.knife === 'true'}
+                    onChange={e => handleFilterChange('knife', e.target.checked ? 'true' : '')}
+                  />
+                  <span className='text-gray-300'>Has any knife</span>
+                </label>
+
+                {/* Valorant Region */}
+                <div className='space-y-2 mb-4'>
+                  <label className='text-gray-300 text-sm font-medium'>Valorant Region</label>
+                  <MultiSelectDropdown
+                    options={valorantRegions}
+                    value={safeFilters.valorant_region || []}
+                    onChange={value => handleFilterChange('valorant_region', value)}
+                    placeholder='Select valorant regions...'
+                    searchable={true}
+                  />
+                </div>
+
+                {/* Exclude Valorant Region */}
+                <div className='space-y-2 mb-4'>
+                  <label className='text-gray-300 text-sm font-medium'>
+                    Exclude Valorant Region
+                  </label>
+                  <MultiSelectDropdown
+                    options={valorantRegions}
+                    value={safeFilters.valorant_not_region || []}
+                    onChange={value => handleFilterChange('valorant_not_region', value)}
+                    placeholder='Select regions to exclude...'
+                    searchable={true}
+                  />
+                </div>
+
+                {/* Level Range */}
+                <div className='grid grid-cols-2 gap-2 mb-4'>
+                  <input
+                    type='number'
+                    name='valorant_level_min'
+                    placeholder='Level from'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.valorant_level_min}
+                    onChange={e => handleFilterChange('valorant_level_min', e.target.value)}
+                  />
+                  <input
+                    type='number'
+                    name='valorant_level_max'
+                    placeholder='up to'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.valorant_level_max}
+                    onChange={e => handleFilterChange('valorant_level_max', e.target.value)}
+                  />
+                </div>
+
+                {/* Agents Range */}
+                <div className='grid grid-cols-2 gap-2 mb-4'>
+                  <input
+                    type='number'
+                    name='amin'
+                    placeholder='Agents from'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.amin}
+                    onChange={e => handleFilterChange('amin', e.target.value)}
+                  />
+                  <input
+                    type='number'
+                    name='amax'
+                    placeholder='up to'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.amax}
+                    onChange={e => handleFilterChange('amax', e.target.value)}
+                  />
+                </div>
+
+                {/* Current Rank */}
+                <label className='block text-gray-300 text-sm font-medium mb-2'>Current Rank</label>
+                <div className='grid grid-cols-2 gap-2 mb-4'>
                   <select
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.inv_game}
-                    onChange={(e) => handleFilterChange('inv_game', e.target.value)}
+                    name='rmin'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.rmin || ''}
+                    onChange={e => handleFilterChange('rmin', e.target.value)}
                   >
-                    <option value="">Select a game</option>
-                    {inventoryGames.map(game => (
-                      <option key={game.value} value={game.value}>
-                        {game.label}
+                    <option value=''>From</option>
+                    {valorantRanks.map(rank => (
+                      <option key={rank.value} value={rank.value}>
+                        {rank.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    name='rmax'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.rmax || ''}
+                    onChange={e => handleFilterChange('rmax', e.target.value)}
+                  >
+                    <option value=''>Up to</option>
+                    {valorantRanks.map(rank => (
+                      <option key={rank.value} value={rank.value}>
+                        {rank.label}
                       </option>
                     ))}
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="From $"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.inv_min}
-                    onChange={(e) => handleFilterChange('inv_min', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="up to"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.inv_max}
-                    onChange={(e) => handleFilterChange('inv_max', e.target.value)}
-                  />
-                </div>
-              </div>
 
-              {/* Registered ago */}
-              <div className="space-y-3">
-                <label className="text-gray-300 text-sm font-medium">Registered ago</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="X..."
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.reg}
-                    onChange={(e) => handleFilterChange('reg', e.target.value)}
-                  />
+                {/* Last Rank */}
+                <label className='block text-gray-300 text-sm font-medium mb-2'>Last Rank</label>
+                <div className='grid grid-cols-2 gap-2 mb-4'>
                   <select
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.reg_period}
-                    onChange={(e) => handleFilterChange('reg_period', e.target.value)}
+                    name='last_rmin'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.last_rmin || ''}
+                    onChange={e => handleFilterChange('last_rmin', e.target.value)}
                   >
-                    <option value="">Select period</option>
-                    {registrationPeriods.map(period => (
-                      <option key={period.value} value={period.value}>
-                        {period.label}
+                    <option value=''>From</option>
+                    {valorantRanks.map(rank => (
+                      <option key={rank.value} value={rank.value}>
+                        {rank.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    name='last_rmax'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.last_rmax || ''}
+                    onChange={e => handleFilterChange('last_rmax', e.target.value)}
+                  >
+                    <option value=''>Up to</option>
+                    {valorantRanks.map(rank => (
+                      <option key={rank.value} value={rank.value}>
+                        {rank.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Last Season Rank */}
+                <label className='block text-gray-300 text-sm font-medium mb-2'>
+                  Last Season Rank
+                </label>
+                <div className='grid grid-cols-2 gap-2 mb-4'>
+                  <select
+                    name='previous_rmin'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.previous_rmin || ''}
+                    onChange={e => handleFilterChange('previous_rmin', e.target.value)}
+                  >
+                    <option value=''>From</option>
+                    {valorantRanks.map(rank => (
+                      <option key={rank.value} value={rank.value}>
+                        {rank.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    name='previous_rmax'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.previous_rmax || ''}
+                    onChange={e => handleFilterChange('previous_rmax', e.target.value)}
+                  >
+                    <option value=''>Up to</option>
+                    {valorantRanks.map(rank => (
+                      <option key={rank.value} value={rank.value}>
+                        {rank.label}
                       </option>
                     ))}
                   </select>
@@ -807,488 +775,169 @@ const RiotFilters = ({ onFilterChange, loading }) => {
               </div>
             </div>
 
-            {/* Third Column */}
-            <div className="filterColumn space-y-4">
-              {/* Balance */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Balance</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="Balance from $"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.balance_min}
-                    onChange={(e) => handleFilterChange('balance_min', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="up to"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.balance_max}
-                    onChange={(e) => handleFilterChange('balance_max', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Level */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Level</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="Level from"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.lmin}
-                    onChange={(e) => handleFilterChange('lmin', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="up to"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.lmax}
-                    onChange={(e) => handleFilterChange('lmax', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Points */}
-              <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Points</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="Points from"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.points_min}
-                    onChange={(e) => handleFilterChange('points_min', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="up to"
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    value={filters.points_max}
-                    onChange={(e) => handleFilterChange('points_max', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Checkboxes */}
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2 text-gray-300">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
-                    checked={filters.no_vac}
-                    onChange={(e) => handleFilterChange('no_vac', e.target.checked)}
-                  />
-                  <span>No VAC All games</span>
+            {/* COLUMN 3 - LEAGUE OF LEGENDS */}
+            <div className='filterColumn space-y-4'>
+              <div className='wrapper'>
+                <label className='text-white font-medium text-lg mb-4 block'>
+                  League of Legends
                 </label>
-                <label className="flex items-center space-x-2 text-gray-300">
+
+                {/* LoL Level */}
+                <div className='grid grid-cols-2 gap-2 mb-4'>
                   <input
-                    type="checkbox"
-                    className="rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500"
-                    checked={filters.email_type && filters.email_type.includes('native')}
-                    onChange={(e) => {
-                      const currentEmailTypes = filters.email_type || []
-                      const newEmailTypes = e.target.checked 
-                        ? [...currentEmailTypes, 'native']
-                        : currentEmailTypes.filter(type => type !== 'native')
-                      handleFilterChange('email_type', newEmailTypes)
-                    }}
+                    type='number'
+                    name='lol_level_min'
+                    placeholder='Level from'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.lol_level_min}
+                    onChange={e => handleFilterChange('lol_level_min', e.target.value)}
                   />
-                  <span>Native mail</span>
-                </label>
-              </div>
-
-              {/* CS2 Section */}
-              <div className="border border-gray-600 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => toggleSection('cs2')}
-                  className="w-full flex items-center justify-between p-3 text-gray-300 hover:bg-gray-800"
-                >
-                  <span className="font-medium">CS2</span>
-                  <Icon
-                    icon="mdi:chevron-down"
-                    className={`transition-transform ${expandedSections.cs2 ? 'rotate-180' : ''}`}
+                  <input
+                    type='number'
+                    name='lol_level_max'
+                    placeholder='up to'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.lol_level_max}
+                    onChange={e => handleFilterChange('lol_level_max', e.target.value)}
                   />
-                </button>
-                {expandedSections.cs2 && (
-                  <div className="p-3 space-y-3 border-t border-gray-600">
-                    {/* CS2 Wins */}
-                    <div className="space-y-2">
-                      <label className="text-gray-300 text-sm">Wins</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="Wins from"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.win_count_min}
-                          onChange={(e) => handleFilterChange('win_count_min', e.target.value)}
-                        />
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="up to"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.win_count_max}
-                          onChange={(e) => handleFilterChange('win_count_max', e.target.value)}
-                        />
-                      </div>
-                    </div>
+                </div>
 
-                    {/* CS2 Medals */}
-                    <div className="space-y-2">
-                      <label className="text-gray-300 text-sm">Medals</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="Medals from"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.medalsmin}
-                          onChange={(e) => handleFilterChange('medalsmin', e.target.value)}
-                        />
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="up to"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.medalsmax}
-                          onChange={(e) => handleFilterChange('medalsmax', e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    {/* CS2 Rank */}
-                    <div className="space-y-2">
-                      <label className="text-gray-300 text-sm">Rank</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="Rank from 1"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.rmin}
-                          onChange={(e) => handleFilterChange('rmin', e.target.value)}
-                        />
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="up to 40"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.rmax}
-                          onChange={(e) => handleFilterChange('rmax', e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Premier ELO */}
-                    <div className="space-y-2">
-                      <label className="text-gray-300 text-sm">Premier ELO</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="From"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.elo_min}
-                          onChange={(e) => handleFilterChange('elo_min', e.target.value)}
-                        />
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="up to 50000"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.elo_max}
-                          onChange={(e) => handleFilterChange('elo_max', e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    {/* FACEIT linked */}
-                    <div className="space-y-2">
-                      <label className="text-gray-300 text-sm">FACEIT linked</label>
-                      <div className="grid grid-cols-3 gap-1">
-                        <label className="flex items-center space-x-1">
-                          <input
-                            type="radio"
-                            name="has_faceit"
-                            value=""
-                            className="text-purple-600 focus:ring-purple-500"
-                            checked={filters.has_faceit === ''}
-                            onChange={(e) => handleFilterChange('has_faceit', e.target.value)}
-                          />
-                          <span className="text-xs text-gray-300">Any</span>
-                        </label>
-                        <label className="flex items-center space-x-1">
-                          <input
-                            type="radio"
-                            name="has_faceit"
-                            value="yes"
-                            className="text-purple-600 focus:ring-purple-500"
-                            checked={filters.has_faceit === 'yes'}
-                            onChange={(e) => handleFilterChange('has_faceit', e.target.value)}
-                          />
-                          <span className="text-xs text-gray-300">Yes</span>
-                        </label>
-                        <label className="flex items-center space-x-1">
-                          <input
-                            type="radio"
-                            name="has_faceit"
-                            value="no"
-                            className="text-purple-600 focus:ring-purple-500"
-                            checked={filters.has_faceit === 'no'}
-                            onChange={(e) => handleFilterChange('has_faceit', e.target.value)}
-                          />
-                          <span className="text-xs text-gray-300">No</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {/* FACEIT Level */}
-                    <div className="space-y-2">
-                      <label className="text-gray-300 text-sm">FACEIT Level</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="From"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.faceit_lvl_min}
-                          onChange={(e) => handleFilterChange('faceit_lvl_min', e.target.value)}
-                        />
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="up to 10"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.faceit_lvl_max}
-                          onChange={(e) => handleFilterChange('faceit_lvl_max', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Dota 2 Section */}
-              <div className="border border-gray-600 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => toggleSection('dota2')}
-                  className="w-full flex items-center justify-between p-3 text-gray-300 hover:bg-gray-800"
-                >
-                  <span className="font-medium">Dota 2</span>
-                  <Icon
-                    icon="mdi:chevron-down"
-                    className={`transition-transform ${expandedSections.dota2 ? 'rotate-180' : ''}`}
+                {/* Win Rate */}
+                <div className='grid grid-cols-2 gap-2 mb-4'>
+                  <input
+                    type='number'
+                    name='win_rate_min'
+                    placeholder='WinRate from'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.win_rate_min}
+                    onChange={e => handleFilterChange('win_rate_min', e.target.value)}
                   />
-                </button>
-                {expandedSections.dota2 && (
-                  <div className="p-3 space-y-3 border-t border-gray-600">
-                    {/* Solo MMR */}
-                    <div className="space-y-2">
-                      <label className="text-gray-300 text-sm">MMR</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="MMR from"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.solommr_min}
-                          onChange={(e) => handleFilterChange('solommr_min', e.target.value)}
-                        />
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="up to"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.solommr_max}
-                          onChange={(e) => handleFilterChange('solommr_max', e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Matches */}
-                    <div className="space-y-2">
-                      <label className="text-gray-300 text-sm">Matches</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="Matches from"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.d2_game_count_min}
-                          onChange={(e) => handleFilterChange('d2_game_count_min', e.target.value)}
-                        />
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="up to"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.d2_game_count_max}
-                          onChange={(e) => handleFilterChange('d2_game_count_max', e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Wins */}
-                    <div className="space-y-2">
-                      <label className="text-gray-300 text-sm">Wins</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="Wins from"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.d2_win_count_min}
-                          onChange={(e) => handleFilterChange('d2_win_count_min', e.target.value)}
-                        />
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="up to"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.d2_win_count_max}
-                          onChange={(e) => handleFilterChange('d2_win_count_max', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Rust Section */}
-              <div className="border border-gray-600 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => toggleSection('rust')}
-                  className="w-full flex items-center justify-between p-3 text-gray-300 hover:bg-gray-800"
-                >
-                  <span className="font-medium">Rust</span>
-                  <Icon
-                    icon="mdi:chevron-down"
-                    className={`transition-transform ${expandedSections.rust ? 'rotate-180' : ''}`}
+                  <input
+                    type='number'
+                    name='win_rate_max'
+                    placeholder='up to'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.win_rate_max}
+                    onChange={e => handleFilterChange('win_rate_max', e.target.value)}
                   />
-                </button>
-                {expandedSections.rust && (
-                  <div className="p-3 space-y-3 border-t border-gray-600">
-                    {/* Deaths */}
-                    <div className="space-y-2">
-                      <label className="text-gray-300 text-sm">Deaths</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="Deaths from"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.rust_deaths_min}
-                          onChange={(e) => handleFilterChange('rust_deaths_min', e.target.value)}
-                        />
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="up to"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.rust_deaths_max}
-                          onChange={(e) => handleFilterChange('rust_deaths_max', e.target.value)}
-                        />
-                      </div>
-                    </div>
+                </div>
 
-                    {/* Kills */}
-                    <div className="space-y-2">
-                      <label className="text-gray-300 text-sm">Kills</label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="Kills from"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.rust_kills_min}
-                          onChange={(e) => handleFilterChange('rust_kills_min', e.target.value)}
-                        />
-                        <input
-                          type="number"
-                          min="1"
-                          placeholder="up to"
-                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          value={filters.rust_kills_max}
-                          onChange={(e) => handleFilterChange('rust_kills_max', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* LoL Skins */}
+                <div className='grid grid-cols-2 gap-2 mb-4'>
+                  <input
+                    type='number'
+                    name='lol_smin'
+                    placeholder='Skins from'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.lol_smin}
+                    onChange={e => handleFilterChange('lol_smin', e.target.value)}
+                  />
+                  <input
+                    type='number'
+                    name='lol_smax'
+                    placeholder='up to'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.lol_smax}
+                    onChange={e => handleFilterChange('lol_smax', e.target.value)}
+                  />
+                </div>
+
+                {/* Champions */}
+                <div className='grid grid-cols-2 gap-2 mb-4'>
+                  <input
+                    type='number'
+                    name='champion_min'
+                    placeholder='Champions from'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.champion_min}
+                    onChange={e => handleFilterChange('champion_min', e.target.value)}
+                  />
+                  <input
+                    type='number'
+                    name='champion_max'
+                    placeholder='up to'
+                    className='bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent'
+                    value={safeFilters.champion_max}
+                    onChange={e => handleFilterChange('champion_max', e.target.value)}
+                  />
+                </div>
+
+                {/* LoL Region */}
+                <div className='space-y-2 mb-4'>
+                  <label className='text-gray-300 text-sm font-medium'>LoL Region</label>
+                  <MultiSelectDropdown
+                    options={lolRegions}
+                    value={safeFilters.lol_region || []}
+                    onChange={value => handleFilterChange('lol_region', value)}
+                    placeholder='Select LoL regions...'
+                    searchable={true}
+                  />
+                </div>
+
+                {/* Exclude LoL Region */}
+                <div className='space-y-2 mb-4'>
+                  <label className='text-gray-300 text-sm font-medium'>Exclude LoL Region</label>
+                  <MultiSelectDropdown
+                    options={lolRegions}
+                    value={safeFilters.lol_not_region || []}
+                    onChange={value => handleFilterChange('lol_not_region', value)}
+                    placeholder='Select LoL regions to exclude...'
+                    searchable={true}
+                  />
+                </div>
               </div>
-
-              {/* Steam Keys & Other Button */}
-              <button
-                type="button"
-                className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors"
-              >
-                Steam Keys & Other ➜
-              </button>
             </div>
           </div>
         </div>
 
         {/* Sort Buttons */}
-        <div className="sortButtons flex flex-wrap gap-2 mt-6">
-          <input type="hidden" id="sortInput" name="order_by" value={filters.order_by} />
-          <input type="hidden" name="page" value="1" id="pageInput" />
-          
+        <div className='sortButtons flex flex-wrap gap-2 mt-6'>
+          <input type='hidden' name='order_by' value={safeFilters.order_by} />
+          <input type='hidden' name='page' value='1' />
+
           <button
-            type="button"
-            className={`px-4 py-2 rounded-lg transition-colors button-sort ${filters.order_by === 'price_to_up' ? 'bg-purple-600 text-white selected' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-            data-value="price_to_up"
-            onClick={() => handleSortChange('price_to_up')}
+            type='button'
+            onClick={() => handleFilterChange('order_by', 'bump')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              safeFilters.order_by === 'bump'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
           >
-            Cheapest
+            Date (Newest)
           </button>
           <button
-            type="button"
-            className={`px-4 py-2 rounded-lg transition-colors button-sort ${filters.order_by === 'price_to_down' ? 'bg-purple-600 text-white selected' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-            data-value="price_to_down"
-            onClick={() => handleSortChange('price_to_down')}
+            type='button'
+            onClick={() => handleFilterChange('order_by', 'price_asc')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              safeFilters.order_by === 'price_asc'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
           >
-            Expensive
+            Price (Low to High)
           </button>
           <button
-            type="button"
-            className={`px-4 py-2 rounded-lg transition-colors button-sort ${filters.order_by === 'pdate_to_down_upload' ? 'bg-purple-600 text-white selected' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-            data-value="pdate_to_down_upload"
-            onClick={() => handleSortChange('pdate_to_down_upload')}
+            type='button'
+            onClick={() => handleFilterChange('order_by', 'price_desc')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              safeFilters.order_by === 'price_desc'
+                ? 'bg-purple-600 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
           >
-            Newest
-          </button>
-          <button
-            type="button"
-            className={`px-4 py-2 rounded-lg transition-colors button-sort ${filters.order_by === 'pdate_to_up_upload' ? 'bg-purple-600 text-white selected' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-            data-value="pdate_to_up_upload"
-            onClick={() => handleSortChange('pdate_to_up_upload')}
-          >
-            Oldest
+            Price (High to Low)
           </button>
         </div>
 
-        {/* Apply Filters Button */}
-        <div className="mt-6">
+        {/* Apply Button */}
+        <div className='mt-6'>
           <button
-            type="button"
+            type='button'
             onClick={handleApplyFilters}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-6 rounded-lg transition-colors font-medium"
-            disabled={loading}
+            className='w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded-lg transition-colors'
           >
-            {loading ? 'Loading...' : 'Apply Filters'}
+            Apply Filters
           </button>
         </div>
       </form>
@@ -1297,4 +946,3 @@ const RiotFilters = ({ onFilterChange, loading }) => {
 }
 
 export default RiotFilters
-
