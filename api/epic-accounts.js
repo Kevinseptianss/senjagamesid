@@ -45,8 +45,6 @@ export default async function handler(req, res) {
       throw new Error('ZELENKA_TOKEN not found in environment variables')
     }
 
-    console.log('Epic Games API Request:', apiURL.toString())
-
     // Make request to LZT Market API
     const response = await fetch(apiURL.toString(), {
       method: 'GET',
@@ -62,7 +60,6 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json()
-    console.log('Epic Games API Response status:', response.status)
 
     // Transform the response to match our expected format
     const transformedData = {

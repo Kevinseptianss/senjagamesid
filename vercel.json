@@ -7,7 +7,61 @@
     "api/lzt-proxy.js": {
       "maxDuration": 30
     },
+    "api/lzt/[...category].js": {
+      "maxDuration": 30
+    },
+    "api/roblox.js": {
+      "maxDuration": 30
+    },
+    "api/steam.js": {
+      "maxDuration": 30
+    },
+    "api/epic.js": {
+      "maxDuration": 30
+    },
+    "api/fortnite.js": {
+      "maxDuration": 30
+    },
+    "api/discord.js": {
+      "maxDuration": 30
+    },
+    "api/gifts.js": {
+      "maxDuration": 30
+    },
+    "api/minecraft.js": {
+      "maxDuration": 30
+    },
+    "api/escapefromtarkov.js": {
+      "maxDuration": 30
+    },
+    "api/socialclub.js": {
+      "maxDuration": 30
+    },
+    "api/uplay.js": {
+      "maxDuration": 30
+    },
+    "api/tiktok.js": {
+      "maxDuration": 30
+    },
+    "api/instagram.js": {
+      "maxDuration": 30
+    },
+    "api/chatgpt.js": {
+      "maxDuration": 30
+    },
+    "api/battlenet.js": {
+      "maxDuration": 30
+    },
+    "api/vpn.js": {
+      "maxDuration": 30
+    },
     "api/winpay/**/*.js": {
+      "maxDuration": 30
+    },
+    "api/lzt/steam/games.js": {
+      "maxDuration": 30
+    },
+    "api/lzt/categories.js": {
       "maxDuration": 30
     }
   },
@@ -15,6 +69,18 @@
     {
       "source": "/api/lzt-proxy/(.*)",
       "destination": "/api/lzt-proxy?path=$1"
+    },
+    {
+      "source": "/api/lzt/steam/games",
+      "destination": "/api/lzt/steam/games"
+    },
+    {
+      "source": "/api/lzt/categories",
+      "destination": "/api/lzt/categories"
+    },
+    {
+      "source": "/api/lzt/(.*)",
+      "destination": "/api/lzt/$1"
     },
     {
       "source": "/api/winpay/(.*)",

@@ -100,7 +100,6 @@ const SearchableGameDropdown = ({
               }))
 
             setAllGames(gamesArray)
-            console.log('🎮 Loaded all games from server:', gamesArray.length)
           }
         } catch (error) {
           console.error('Error fetching all games:', error)

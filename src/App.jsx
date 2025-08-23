@@ -341,11 +341,6 @@ function MainPage() {
       { name: 'VPN', icon: 'material-symbols:vpn-lock', color: '#00CED1', isLocal: false },
       { name: 'Roblox', icon: 'simple-icons:roblox', color: '#E13838', isLocal: false }
     ]
-
-    console.log(
-      '🎯 Static Categories Array (NEVER CHANGES):',
-      staticCategories.map(c => c.name)
-    )
     return staticCategories
   }, []) // Empty dependency array - never re-calculate
 
@@ -452,7 +447,6 @@ function MainPage() {
       categoryName === 'ChatGPT' ||
       categoryName === 'chatgpt' ||
       (categoryName && categoryName.toLowerCase().includes('chatgpt'))
-    console.log('🤖 ChatGPT Category Check:', { categoryName, result })
     return result
   }
 

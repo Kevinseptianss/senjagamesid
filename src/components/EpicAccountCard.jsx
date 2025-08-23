@@ -130,8 +130,6 @@ const EpicAccountCard = ({ account }) => {
       Object.keys(account.eg_games).length > 0
     ) {
       const games = Object.values(account.eg_games)
-      console.log('- Found games in eg_games:', games.length)
-      console.log('- Sample game:', games[0])
       return games.slice(0, 4) // Show first 4 games
     }
 

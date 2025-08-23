@@ -1,14 +1,30 @@
 // Lightweight LZT Market API client for browser
 class LZTMarketClient {
   constructor() {
-    // Use proxy in development, Vercel API routes in production
-    if (import.meta.env.MODE === 'development') {
-      this.baseURL = '/api/lzt'
+    // Check if we're in a serverless environment (Node.js) or browser
+    const isServerless = typeof window === 'undefined' && typeof process !== 'undefined'
+
+    if (isServerless) {
+      // In serverless functions, we don't use proxies - call LZT API directly
+      this.baseURL = 'https://prod-api.lzt.market'
+      this.isServerless = true
     } else {
-      // In production, use Vercel API proxy
-      this.baseURL = '/api/lzt-proxy'
+      // Use proxy in development, Vercel API routes in production
+      const isDevelopment =
+        typeof import.meta !== 'undefined' &&
+        import.meta.env &&
+        import.meta.env.MODE === 'development'
+
+      if (isDevelopment) {
+        this.baseURL = '/api/lzt'
+      } else {
+        // In production, use Vercel API proxy
+        this.baseURL = '/api/lzt-proxy'
+      }
+      this.isServerless = false
     }
-    this.token = null
+    this.token =
+      process.env.ZELENKA_TOKEN || process.env.VITE_ZELENKA_TOKEN || process.env.LZT_TOKEN || null
   }
 
   auth(token) {
@@ -22,12 +38,23 @@ class LZTMarketClient {
     }
 
     let url
-    if (import.meta.env.MODE === 'development') {
-      // Development: direct proxy
+    if (this.isServerless) {
+      // In serverless functions, call LZT API directly
       url = `${this.baseURL}/${endpoint}`
     } else {
-      // Production: Vercel API function expects path as query parameter
-      url = `${this.baseURL}?path=${encodeURIComponent(endpoint)}`
+      // In browser environment
+      const isDevelopment =
+        typeof import.meta !== 'undefined' &&
+        import.meta.env &&
+        import.meta.env.MODE === 'development'
+
+      if (isDevelopment) {
+        // Development: direct proxy
+        url = `${this.baseURL}/${endpoint}`
+      } else {
+        // Production: Vercel API function expects path as query parameter
+        url = `${this.baseURL}?path=${encodeURIComponent(endpoint)}`
+      }
     }
 
     const config = {

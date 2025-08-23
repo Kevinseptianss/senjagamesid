@@ -134,7 +134,7 @@ export const useInfiniteEscapeFromTarkovAccounts = (filters = {}) => {
         }
 
         const queryString = buildQueryParams(pageNum, filters)
-        const url = `/api/escapefromtarkov?${queryString}`
+        const url = `/api/lzt/escapefromtarkov?${queryString}`
 
         console.log(`🔍 Fetching Escape From Tarkov accounts from: ${url}`)
 
@@ -147,11 +147,13 @@ export const useInfiniteEscapeFromTarkovAccounts = (filters = {}) => {
         const result = await response.json()
         console.log('✅ Escape From Tarkov API Response:', result)
 
-        if (!result.data || !result.data.items) {
+        // Handle different response structures - some APIs return data.items, others return items directly
+        const responseData = result.data || result
+        if (!responseData.items) {
           throw new Error('Invalid API response format')
         }
 
-        const { items, hasNextPage } = result.data
+        const { items, hasNextPage } = responseData
 
         // Transform accounts
         const transformedAccounts = items

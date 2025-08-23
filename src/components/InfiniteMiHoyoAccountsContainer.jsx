@@ -15,11 +15,6 @@ const InfiniteMiHoyoAccountsContainer = ({ filters }) => {
     setError(null)
 
     try {
-      console.log('🎮 Fetching MiHoYo accounts from server...', {
-        page: pageNum,
-        filters: currentFilters
-      })
-
       // Build query parameters
       const queryParams = new URLSearchParams({
         page: pageNum,

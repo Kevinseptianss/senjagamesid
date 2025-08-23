@@ -30,74 +30,9 @@ export default defineConfig({
   server: {
     historyApiFallback: true,
     proxy: {
-      '/api/lzt': {
+      '/api': {
         target: 'http://localhost:3002',
         changeOrigin: true
-      },
-      '/api/steam': {
-        target: 'http://localhost:3002',
-        changeOrigin: true
-      },
-      '/api/epic': {
-        target: 'http://localhost:3002',
-        changeOrigin: true
-      },
-      '/api/fortnite': {
-        target: 'http://localhost:3002',
-        changeOrigin: true
-      },
-      '/api/gifts': {
-        target: 'http://localhost:3002',
-        changeOrigin: true
-      },
-      '/api/minecraft': {
-        target: 'http://localhost:3002',
-        changeOrigin: true
-      },
-      '/api/chatgpt': {
-        target: 'http://localhost:3002',
-        changeOrigin: true
-      },
-      '/api/battlenet': {
-        target: 'http://localhost:3002',
-        changeOrigin: true
-      },
-      '/api/roblox': {
-        target: 'http://localhost:3002',
-        changeOrigin: true
-      },
-      '/api/vpn': {
-        target: 'http://localhost:3002',
-        changeOrigin: true
-      },
-      '/api/escapefromtarkov': {
-        target: 'http://localhost:3002',
-        changeOrigin: true
-      },
-      '/api/socialclub': {
-        target: 'http://localhost:3002',
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api\/socialclub/, '/api/lzt/socialclub')
-      },
-      '/api/uplay': {
-        target: 'http://localhost:3002',
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api\/uplay/, '/api/lzt/uplay')
-      },
-      '/api/discord': {
-        target: 'http://localhost:3002',
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api\/discord/, '/api/lzt/discord')
-      },
-      '/api/tiktok': {
-        target: 'http://localhost:3002',
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api\/tiktok/, '/api/lzt/tiktok')
-      },
-      '/api/instagram': {
-        target: 'http://localhost:3002',
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api\/instagram/, '/api/lzt/instagram')
       },
       '/winpay-api': {
         target: 'https://api.winpay.id',
@@ -109,6 +44,9 @@ export default defineConfig({
         }
       }
     }
+  },
+  optimizeDeps: {
+    exclude: ['api']
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')

@@ -75,25 +75,69 @@ app.use('/api/lzt', async (req, res) => {
 
     let result
 
-    // Route to appropriate SDK methods based on path
-    if (cleanPath.includes('/category_steam') || cleanPath.includes('/category/6')) {
+    // Route to appropriate SDK methods based on path (support both old and new formats)
+    if (
+      cleanPath.includes('/steam') ||
+      cleanPath.includes('/category_steam') ||
+      cleanPath.includes('/category/6')
+    ) {
       result = await lztMarket.categorySteam(query)
-    } else if (cleanPath.includes('/category_epic') || cleanPath.includes('/category/7')) {
+    } else if (
+      cleanPath.includes('/epic') ||
+      cleanPath.includes('/category_epic') ||
+      cleanPath.includes('/category/7')
+    ) {
       result = await lztMarket.categoryEpic(query)
-    } else if (cleanPath.includes('/category_origin') || cleanPath.includes('/category/8')) {
+    } else if (
+      cleanPath.includes('/origin') ||
+      cleanPath.includes('/category_origin') ||
+      cleanPath.includes('/category/8')
+    ) {
       result = await lztMarket.categoryOrigin(query)
-    } else if (cleanPath.includes('/category_ea') || cleanPath.includes('/category/9')) {
+    } else if (
+      cleanPath.includes('/ea') ||
+      cleanPath.includes('/category_ea') ||
+      cleanPath.includes('/category/9')
+    ) {
       result = await lztMarket.categoryEA(query)
-    } else if (cleanPath.includes('/category_riot') || cleanPath.includes('/category/16')) {
+    } else if (
+      cleanPath.includes('/riot') ||
+      cleanPath.includes('/category_riot') ||
+      cleanPath.includes('/category/16')
+    ) {
       result = await lztMarket.categoryRiot(query)
-    } else if (cleanPath.includes('/category_fortnite') || cleanPath.includes('/category/17')) {
+    } else if (
+      cleanPath.includes('/fortnite') ||
+      cleanPath.includes('/category_fortnite') ||
+      cleanPath.includes('/category/17')
+    ) {
       result = await lztMarket.categoryFortnite(query)
-    } else if (cleanPath.includes('/category_mihoyo') || cleanPath.includes('/category/19')) {
+    } else if (
+      cleanPath.includes('/mihoyo') ||
+      cleanPath.includes('/category_mihoyo') ||
+      cleanPath.includes('/category/19')
+    ) {
       result = await lztMarket.categoryMihoyo(query)
-    } else if (cleanPath.includes('/category_chatgpt') || cleanPath.includes('/category/6')) {
+    } else if (
+      cleanPath.includes('/chatgpt') ||
+      cleanPath.includes('/category_chatgpt') ||
+      cleanPath.includes('/category/6')
+    ) {
       result = await lztMarket.category({ category_id: 6, ...query })
-    } else if (cleanPath.includes('/category_battlenet') || cleanPath.includes('/category/11')) {
+    } else if (
+      cleanPath.includes('/battlenet') ||
+      cleanPath.includes('/category_battlenet') ||
+      cleanPath.includes('/category/11')
+    ) {
       result = await lztMarket.categoryBattleNet(query)
+    } else if (cleanPath.includes('/roblox') || cleanPath.includes('/category_roblox')) {
+      result = await lztMarket.categoryRoblox(query)
+    } else if (cleanPath.includes('/supercell') || cleanPath.includes('/category_supercell')) {
+      result = await lztMarket.categorySupercell(query)
+    } else if (cleanPath.includes('/wot') || cleanPath.includes('/category_wot')) {
+      result = await lztMarket.categoryWOT(query)
+    } else if (cleanPath.includes('/telegram') || cleanPath.includes('/category_telegram')) {
+      result = await lztMarket.categoryTelegram(query)
     } else if (cleanPath.includes('/category/')) {
       // Generic category endpoint
       const categoryId = cleanPath.match(/\/category\/(\d+)/)?.[1]
@@ -103,7 +147,7 @@ app.use('/api/lzt', async (req, res) => {
         throw new Error('Invalid category endpoint')
       }
     } else {
-      throw new Error('Unsupported LZT Market endpoint')
+      throw new Error(`Unsupported LZT Market endpoint: ${cleanPath}`)
     }
 
     console.log(`✅ LZT SDK Success:`, {
